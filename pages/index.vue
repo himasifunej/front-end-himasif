@@ -209,6 +209,20 @@
 </template>
 
 <script setup>
+
+useHead({
+  
+  title: 'HIMASIF - Fortes in Futura !',
+  
+  
+  meta: [
+    { 
+      name: 'description', 
+      content: 'Website resmi Himpunan Mahasiswa Sistem Informasi Universitas Jember. Dapatkan informasi terbaru seputar kegiatan, program kerja, artikel, dan fitur-fitur bermanfaat untuk mahasiswa Sistem Informasi Universitas Jember.' 
+    }
+  ]
+})
+
 import { initTooltips } from 'flowbite';
 
 const { authenticated } = storeToRefs(useAuthStore())
