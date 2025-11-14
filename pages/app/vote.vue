@@ -20,7 +20,6 @@
         v-if="isVoteTime"
       >
         <h3 class="text-title-2 text-center">
-        testing bro
           PEMILIHAN KETUA UMUM <br />
           HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
           UNIVERSITAS JEMBER <br />
@@ -46,13 +45,15 @@
                 >
                   <h4 class="text-title-2 py-5">{{ ketua.order }}</h4>
 
-                  <!-- Fixed: Use img tag instead of NuxtImg for external URLs -->
-                  <img
-                    :src="getImageUrl(ketua.image)"
-                    :alt="ketua.name"
+                  <!-- Gambar dengan fallback -->
+                  <NuxtImg
+                    :src="
+                      ketua.image && ketua.image.length > 0
+                        ? ketua.image[0].url
+                        : placeholder
+                    "
                     height="250"
                     class="w-full object-cover h-[300px]"
-                    @error="handleImageError"
                   />
 
                   <div class="p-4 space-y-2">
@@ -63,7 +64,7 @@
                           : 'text-secondary'
                       "
                     >
-                      CALON KETUA UMUM HIMASIF BROO
+                      CALON KETUA UMUM
                     </p>
                     <div
                       class="h-20 flex items-center justify-center break-words"
@@ -115,12 +116,10 @@
                         <h4 class="text-title-2 py-5">
                           {{ infoKetua?.order }}
                         </h4>
-                        <img
-                          :src="getImageUrl(infoKetua?.image)"
-                          :alt="infoKetua?.name"
+                        <NuxtImg
+                          :src="infoKetua?.image?.[0]?.url || placeholder"
                           height="200"
                           class="object-cover w-full h-[200px] object-center"
-                          @error="handleImageError"
                         />
                         <div class="p-4 space-y-2">
                           <p class="text-secondary">CALON KETUA UMUM</p>
@@ -218,9 +217,6 @@ const isVote = ref(useCookie("is-vote").value);
 const infoKetua = ref();
 const voteLoading = ref(false);
 
-// Define placeholder image
-const placeholderImage = '/images/placeholder.jpg'; // or use a data URL
-
 var d = new Date();
 d.setSeconds(d.getSeconds() + 10);
 
@@ -246,20 +242,6 @@ const isVoteTime = computed(() => {
   // return now.value > new Date(d).getTime()
   return now.value > new Date(vote_settings.value.result.start_at).getTime();
 });
-
-// Helper function to get image URL
-const getImageUrl = (imageArray) => {
-  if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url) {
-    return imageArray[0].url;
-  }
-  return placeholderImage;
-};
-
-// Handle image loading errors
-const handleImageError = (event) => {
-  console.error('Image failed to load:', event.target.src);
-  event.target.src = placeholderImage;
-};
 
 const getInfoKetua = (ketua) => {
   infoKetua.value = ketua;
@@ -289,7 +271,6 @@ const submitVote = async function () {
         text: "Halo Sisforians, Maaf vote telah ditutup",
       },
     });
-    return;
   }
   //Call confirmation modal
   await alertStore
@@ -351,3 +332,4 @@ onMounted(() => {
 </script>
 
 <style></style>
+
