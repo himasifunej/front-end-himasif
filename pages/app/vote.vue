@@ -36,53 +36,64 @@
               >
                 <div
                   @click="selectOption(ketua.id)"
-                  class="cursor-pointer rounded-[10px] border text-center"
+                  class="cursor-pointer rounded-[10px] border overflow-hidden relative"
                   :class="
                     selectedOption == ketua.id
-                      ? 'bg-[#00BF08]  border-[#3BC541]'
+                      ? 'bg-[#00BF08] border-[#3BC541]'
                       : 'bg-primary-900 border-primary-800'
                   "
                 >
-                  <h4 class="text-title-2 py-5">{{ ketua.order }}</h4>
+                  <!-- Background Image (di belakang) -->
+                  <div class="absolute inset-0 opacity-20">
+                    <img
+                      :src="getImageUrl(ketua.image)"
+                      :alt="ketua.name + ' background'"
+                      class="w-full h-full object-cover blur-sm"
+                    />
+                  </div>
 
-                  <!-- Gambar dengan fallback -->
-                  <NuxtImg
-                    :src="
-                      ketua.image && ketua.image.length > 0
-                        ? ketua.image[0].url
-                        : placeholder
-                    "
-                    height="250"
-                    class="w-full object-cover h-[300px]"
-                  />
+                  <!-- Content dengan gambar di depan -->
+                  <div class="relative z-10">
+                    <h4 class="text-title-2 py-5 text-center">{{ ketua.order }}</h4>
 
-                  <div class="p-4 space-y-2">
-                    <p
-                      :class="
-                        selectedOption == ketua.id
-                          ? 'text-[#B8E3B9]'
-                          : 'text-secondary'
-                      "
-                    >
-                      CALON KETUA UMUM
-                    </p>
-                    <div
-                      class="h-20 flex items-center justify-center break-words"
-                      lang="de"
-                    >
-                      <h5 class="text-xl font-bold uppercase">
-                        {{ ketua.name }}
-                      </h5>
+                    <!-- Gambar Kandidat (di depan) -->
+                    <div class="flex justify-center px-4">
+                      <img
+                        :src="getImageUrl(ketua.image)"
+                        :alt="ketua.name"
+                        class="w-full object-cover h-[300px] rounded-lg"
+                        @error="handleImageError"
+                      />
                     </div>
-                    <p
-                      :class="
-                        selectedOption == ketua.id
-                          ? 'text-[#B8E3B9]'
-                          : 'text-secondary'
-                      "
-                    >
-                      SISTEM INFORMASI {{ ketua.year_of_study }}
-                    </p>
+
+                    <div class="p-4 space-y-2 text-center">
+                      <p
+                        :class="
+                          selectedOption == ketua.id
+                            ? 'text-[#B8E3B9]'
+                            : 'text-secondary'
+                        "
+                      >
+                        CALON KETUA UMUM
+                      </p>
+                      <div
+                        class="h-20 flex items-center justify-center break-words"
+                        lang="de"
+                      >
+                        <h5 class="text-xl font-bold uppercase">
+                          {{ ketua.name }}
+                        </h5>
+                      </div>
+                      <p
+                        :class="
+                          selectedOption == ketua.id
+                            ? 'text-[#B8E3B9]'
+                            : 'text-secondary'
+                        "
+                      >
+                        SISTEM INFORMASI {{ ketua.year_of_study }}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -111,29 +122,42 @@
                   <div class="p-8 flex">
                     <div class="w-1/4">
                       <div
-                        class="w-[220px] rounded-[10px] border text-center bg-primary-900 border-primary-800"
+                        class="w-[220px] rounded-[10px] border text-center bg-primary-900 border-primary-800 overflow-hidden relative"
                       >
-                        <h4 class="text-title-2 py-5">
-                          {{ infoKetua?.order }}
-                        </h4>
-                        <NuxtImg
-                          :src="infoKetua?.image?.[0]?.url || placeholder"
-                          height="200"
-                          class="object-cover w-full h-[200px] object-center"
-                        />
-                        <div class="p-4 space-y-2">
-                          <p class="text-secondary">CALON KETUA UMUM</p>
-                          <div
-                            class="h-20 flex items-center justify-center break-words"
-                            lang="de"
-                          >
-                            <h5 class="text-xl font-bold uppercase">
-                              {{ infoKetua?.name }}
-                            </h5>
+                        <!-- Background Image di Modal -->
+                        <div class="absolute inset-0 opacity-20">
+                          <img
+                            :src="getImageUrl(infoKetua?.image)"
+                            :alt="infoKetua?.name + ' background'"
+                            class="w-full h-full object-cover blur-sm"
+                          />
+                        </div>
+
+                        <!-- Content Modal -->
+                        <div class="relative z-10">
+                          <h4 class="text-title-2 py-5">
+                            {{ infoKetua?.order }}
+                          </h4>
+                          <img
+                            :src="getImageUrl(infoKetua?.image)"
+                            :alt="infoKetua?.name"
+                            class="object-cover w-full h-[200px] object-center"
+                            @error="handleImageError"
+                          />
+                          <div class="p-4 space-y-2">
+                            <p class="text-secondary">CALON KETUA UMUM</p>
+                            <div
+                              class="h-20 flex items-center justify-center break-words"
+                              lang="de"
+                            >
+                              <h5 class="text-xl font-bold uppercase">
+                                {{ infoKetua?.name }}
+                              </h5>
+                            </div>
+                            <p class="text-secondary">
+                              SISTEM INFORMASI {{ infoKetua?.year_of_study }}
+                            </p>
                           </div>
-                          <p class="text-secondary">
-                            SISTEM INFORMASI {{ infoKetua?.year_of_study }}
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -239,9 +263,22 @@ const updateDate = () => {
 setInterval(updateDate, 1000);
 
 const isVoteTime = computed(() => {
-  // return now.value > new Date(d).getTime()
   return now.value > new Date(vote_settings.value.result.start_at).getTime();
 });
+
+// Helper function to safely get image URL
+const getImageUrl = (imageArray) => {
+  if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url) {
+    return imageArray[0].url;
+  }
+  return 'https://placehold.co/600x400?text=No+Image';
+};
+
+// Handle image loading errors
+const handleImageError = (event) => {
+  console.error('Image failed to load:', event.target.src);
+  event.target.src = 'https://placehold.co/600x400?text=Image+Error';
+};
 
 const getInfoKetua = (ketua) => {
   infoKetua.value = ketua;
@@ -271,8 +308,9 @@ const submitVote = async function () {
         text: "Halo Sisforians, Maaf vote telah ditutup",
       },
     });
+    return;
   }
-  //Call confirmation modal
+
   await alertStore
     .openModal({
       component: markRaw(AppAlertConfirm),
@@ -280,11 +318,8 @@ const submitVote = async function () {
         text: "Apakah kamu yakin dengan pilihanmu?",
       },
     })
-    // wait for the response, if ok doing then
     .then(async (res) => {
       if (res) {
-        //calling vote API here
-        //code
         voteLoading.value = true;
         const formData = createFormData({
           voting_candidate_id: selectedOption.value,
@@ -297,7 +332,6 @@ const submitVote = async function () {
           body: formData,
         });
 
-        //reseting value and done voting
         selectedOption.value = -1;
 
         if (vote.value.code !== 200) {
@@ -322,7 +356,6 @@ const submitVote = async function () {
         voteLoading.value = false;
       }
     })
-    //if user cancel
     .catch(() => {});
 };
 
@@ -332,4 +365,3 @@ onMounted(() => {
 </script>
 
 <style></style>
-
