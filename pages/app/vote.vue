@@ -1,5 +1,6 @@
 <template>
-  <div class="relative w-full min-h-[120vh] bg-primary-950 text-white overflow-hidden">
+  <div class="relative w-full min-h-[160vh] bg-primary-950 text-white overflow-hidden">
+
     <!-- BACKGROUND IMAGE (LOWEST LAYER) -->
     <div class="absolute inset-0 z-0 pointer-events-none">
       <NuxtImg
@@ -13,7 +14,7 @@
     <!-- FOREGROUND CONTENT -->
     <div class="relative z-20">
       <AppContentArea class="pt-10 lg:pt-16 pb-20">
-        <!-- HEADER TEXT + IMAGE -->
+        <!-- HEADER TEXT + IMAGE SEJARAH -->
         <AppContainer class="w-11/12 lg:w-2/3 mx-auto pb-6">
           <div class="flex flex-col lg:flex-row items-center lg:items-center justify-between gap-6">
             <div class="text-center lg:text-left max-w-xl space-y-2">
