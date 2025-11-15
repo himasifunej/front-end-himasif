@@ -37,6 +37,16 @@
                 PERIODE 2025/2026
               </h3>
             </div>
+
+            <!-- GAMBAR BLUR KANDIDAT DI SAMPING -->
+            <div class="w-[35%] relative rounded-lg overflow-hidden">
+              <img
+                v-if="candidates?.data?.length > 0"
+                :src="getImageUrl(candidates.data[0].image)"
+                alt="Kandidat utama background"
+                class="w-full h-auto object-cover blur-md opacity-40"
+              />
+            </div>
           </div>
 
           <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
@@ -54,16 +64,7 @@
                     ? 'bg-[#00BF08] border-[#3BC541]'
                     : 'bg-primary-900 border-primary-800'"
                 >
-                  <!-- Background kecil untuk card -->
-                  <div class="absolute inset-0 opacity-20">
-                    <img
-                      :src="getImageUrl(ketua.image)"
-                      :alt="ketua.name + ' background'"
-                      class="w-full h-full object-cover blur-sm"
-                    />
-                  </div>
-
-                  <!-- Content depan -->
+                  <!-- Content depan tanpa blur overlay -->
                   <div class="relative z-10">
                     <h4 class="text-title-2 py-5 text-center">
                       {{ ketua.order }}
