@@ -25,7 +25,7 @@
         <!-- VOTE SECTION (kalau sudah waktu vote) -->
         <AppContainer
           v-if="vote_settings?.result && isVoteTime"
-          class="pb-5 text-white h-full flex flex-col justify-center w-2/3 space-y-10"
+          class="pb-5 text-white h-full flex flex-col justify-center w-full max-w-[1200px] mx-auto space-y-10 overflow-hidden"
         >
           <!-- TULISAN + GAMBAR SEJARAH -->
           <div class="flex justify-between items-center mb-8">
@@ -37,15 +37,18 @@
                 PERIODE 2025/2026
               </h3>
             </div>
+            <div class="w-[35%]">
+              <img src="https://placehold.co/400x300?text=Vote+Image" class="w-full h-auto rounded-lg" />
+            </div>
           </div>
 
           <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
-          <div class="flex justify-center relative z-30">
-            <div class="flex space-x-4">
+          <div class="flex justify-center relative z-30 overflow-x-auto">
+            <div class="flex space-x-4 max-w-full px-2">
               <div
                 v-for="ketua in candidates?.data || []"
                 :key="ketua.id"
-                class="w-[300px]"
+                class="w-[300px] flex-shrink-0"
               >
                 <div
                   @click="selectOption(ketua.id)"
@@ -79,17 +82,17 @@
                     </div>
 
                     <div class="p-4 space-y-2 text-center">
-                      <p :class="selectedOption == ketua.id ? 'text-[#000000]' : 'text-secondary'">
+                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
                         CALON KETUA UMUM
                       </p>
 
                       <div class="h-20 flex items-center justify-center break-words" lang="de">
-                        <h5 class=" 'text-[#000000]'text-xl font-bold uppercase">
+                        <h5 class="text-xl font-bold uppercase">
                           {{ ketua.name }}
                         </h5>
                       </div>
 
-                      <p :class="selectedOption == ketua.id ? 'text-[#000000]' : 'text-secondary'">
+                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
                         SISTEM INFORMASI {{ ketua.year_of_study }}
                       </p>
                     </div>
@@ -109,73 +112,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- MODAL VISI MISI -->
-            <div
-              id="visimisi-modal"
-              tabindex="-1"
-              aria-hidden="true"
-              class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 max-h-full bg-black/80"
-            >
-              <div class="relative p-4 w-full max-w-6xl max-h-full mx-0">
-                <div class="relative bg-primary-950 rounded-2xl shadow">
-                  <div class="p-8 flex">
-
-                    <!-- KIRI (foto kandidat) -->
-                    <div class="w-1/4">
-                      <div class="w-[220px] rounded-[10px] border text-center bg-primary-900 border-primary-800 overflow-hidden relative">
-                        <div class="absolute inset-0 opacity-20">
-                          <img
-                            :src="getImageUrl(infoKetua?.image)"
-                            :alt="infoKetua?.name + ' background'"
-                            class="w-full h-full object-cover blur-sm"
-                          />
-                        </div>
-                        <div class="relative z-10">
-                          <h4 class="text-title-2 py-5">
-                            {{ infoKetua?.order }}
-                          </h4>
-                          <img
-                            :src="getImageUrl(infoKetua?.image)"
-                            :alt="infoKetua?.name"
-                            class="object-cover w-full h-[200px] object-center"
-                            @error="handleImageError"
-                          />
-                          <div class="p-4 space-y-2">
-                            <p class="text-secondary">CALON KETUA UMUM</p>
-                            <div class="h-20 flex items-center justify-center break-words" lang="de">
-                              <h5 class="text-xl font-bold uppercase">
-                                {{ infoKetua?.name }}
-                              </h5>
-                            </div>
-                            <p class="text-secondary">
-                              SISTEM INFORMASI {{ infoKetua?.year_of_study }}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- KANAN (visi misi) -->
-                    <div class="w-3/4 space-y-6 flex flex-col justify-center">
-                      <div class="space-y-4">
-                        <h3 class="text-title-2">Visi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.visi"></div>
-                      </div>
-                      <div class="space-y-4">
-                        <h3 class="text-title-2">Misi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.misi"></div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-                <div class="flex justify-center mt-5">
-                  <AppButton data-modal-hide="visimisi-modal">Tutup</AppButton>
-                </div>
-              </div>
-            </div>
-
           </div>
 
           <!-- BUTTON KIRIM -->
