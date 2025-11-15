@@ -1,6 +1,29 @@
 <template>
   <div class="bg-primary-950 text-white min-h-screen">
+    <!-- Gambar Kandidat di Atas Background Header -->
+    <div class="relative z-20 pt-8" v-if="isVoteTime">
+      <AppContainer class="flex justify-center">
+        <div class="flex space-x-4">
+          <div
+            v-for="ketua in candidates.data"
+            :key="ketua.id"
+            class="w-[200px]"
+          >
+            <div class="flex justify-center">
+              <img
+                :src="getImageUrl(ketua.image)"
+                :alt="ketua.name"
+                class="w-32 h-32 object-cover rounded-full border-4 border-white shadow-2xl"
+                @error="handleImageError"
+              />
+            </div>
+          </div>
+        </div>
+      </AppContainer>
+    </div>
+
     <AppBackgroundHeader background-image="vote.jpeg" />
+
     <AppContentArea class="pt-4">
       <AppContainer
         class="pb-5 text-white h-[500px] flex flex-col justify-center w-2/3 space-y-10"
@@ -24,6 +47,7 @@
           UNIVERSITAS JEMBER <br />
           PERIODE 2025/2026
         </h3>
+
         <div class="flex justify-center">
           <template>
             <div class="flex space-x-4">
@@ -41,6 +65,7 @@
                       : 'bg-primary-900 border-primary-800'
                   "
                 >
+                  <!-- Background Image (di belakang) -->
                   <div class="absolute inset-0 opacity-20">
                     <img
                       :src="getImageUrl(ketua.image)"
@@ -48,10 +73,12 @@
                       class="w-full h-full object-cover blur-sm"
                     />
                   </div>
+
+                  <!-- Content dengan gambar di depan -->
                   <div class="relative z-10">
-                    <h4 class="text-title-2 py-5 text-center">
-                      {{ ketua.order }}
-                    </h4>
+                    <h4 class="text-title-2 py-5 text-center">{{ ketua.order }}</h4>
+
+                    <!-- Gambar Kandidat (di depan) -->
                     <div class="flex justify-center px-4">
                       <img
                         :src="getImageUrl(ketua.image)"
@@ -60,6 +87,7 @@
                         @error="handleImageError"
                       />
                     </div>
+
                     <div class="p-4 space-y-2 text-center">
                       <p
                         :class="
@@ -90,6 +118,7 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="flex justify-center mt-4">
                   <AppButton
                     class="border border-primary-800"
@@ -102,6 +131,8 @@
                 </div>
               </div>
             </div>
+
+            <!-- Modal Visi Misi -->
             <div
               id="visimisi-modal"
               tabindex="-1"
@@ -115,6 +146,7 @@
                       <div
                         class="w-[220px] rounded-[10px] border text-center bg-primary-900 border-primary-800 overflow-hidden relative"
                       >
+                        <!-- Background Image di Modal -->
                         <div class="absolute inset-0 opacity-20">
                           <img
                             :src="getImageUrl(infoKetua?.image)"
@@ -122,6 +154,8 @@
                             class="w-full h-full object-cover blur-sm"
                           />
                         </div>
+
+                        <!-- Content Modal -->
                         <div class="relative z-10">
                           <h4 class="text-title-2 py-5">
                             {{ infoKetua?.order }}
@@ -149,16 +183,22 @@
                         </div>
                       </div>
                     </div>
-                    <div
-                      class="w-3/4 space-y-6 flex flex-col justify-center"
-                    >
+
+                    <div class="w-3/4 space-y-6 flex flex-col justify-center">
                       <div class="space-y-4">
                         <h3 class="text-title-2">Visi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.visi"></div>
+                        <div
+                          class="text-secondary"
+                          v-html="infoKetua?.visi"
+                        ></div>
                       </div>
+
                       <div class="space-y-4">
                         <h3 class="text-title-2">Misi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.misi"></div>
+                        <div
+                          class="text-secondary"
+                          v-html="infoKetua?.misi"
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -170,6 +210,7 @@
             </div>
           </template>
         </div>
+
         <div class="flex justify-center">
           <AppButton
             class="border border-primary-800 flex items-center"
@@ -203,3 +244,146 @@
     </AppContentArea>
   </div>
 </template>
+
+<script setup>
+import { AppAlertConfirm, AppAlertSuccess, AppAlertError } from "#components";
+import { initModals } from "flowbite";
+
+definePageMeta({
+  middleware: ["validate-vote-start"],
+});
+
+useHead({
+  title: "Vote",
+});
+
+const alertStore = useAlertsStore();
+const selectedOption = ref(-1);
+const isVote = ref(useCookie("is-vote").value);
+const infoKetua = ref();
+const voteLoading = ref(false);
+
+var d = new Date();
+d.setSeconds(d.getSeconds() + 10);
+
+const { data: vote_settings } = await useAPI("/vote_setting", {
+  pick: ["result"],
+});
+
+const { data: candidates } = await useAPI("/voting_candidate", {
+  query: {
+    sort: "order",
+  },
+  pick: ["data"],
+});
+
+const now = ref(new Date());
+
+const updateDate = () => {
+  now.value = new Date();
+};
+setInterval(updateDate, 1000);
+
+const isVoteTime = computed(() => {
+  return now.value > new Date(vote_settings.value.result.start_at).getTime();
+});
+
+// Helper function to safely get image URL
+const getImageUrl = (imageArray) => {
+  if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url) {
+    return imageArray[0].url;
+  }
+  return 'https://placehold.co/600x400?text=No+Image';
+};
+
+// Handle image loading errors
+const handleImageError = (event) => {
+  console.error('Image failed to load:', event.target.src);
+  event.target.src = 'https://placehold.co/600x400?text=Image+Error';
+};
+
+const getInfoKetua = (ketua) => {
+  infoKetua.value = ketua;
+};
+
+const selectOption = function (i) {
+  if (isVote.value) {
+    alertStore.openModal({
+      component: markRaw(AppAlertError),
+      props: {
+        text: "Anda sudah melakukan voting",
+      },
+    });
+    return;
+  }
+
+  if (!isVote.value) {
+    selectedOption.value = i;
+  }
+};
+
+const submitVote = async function () {
+  if (now.value > new Date(vote_settings.value.result.end_at)) {
+    alertStore.openModal({
+      component: markRaw(AppAlertError),
+      props: {
+        text: "Halo Sisforians, Maaf vote telah ditutup",
+      },
+    });
+    return;
+  }
+
+  await alertStore
+    .openModal({
+      component: markRaw(AppAlertConfirm),
+      props: {
+        text: "Apakah kamu yakin dengan pilihanmu?",
+      },
+    })
+    .then(async (res) => {
+      if (res) {
+        voteLoading.value = true;
+        const formData = createFormData({
+          voting_candidate_id: selectedOption.value,
+        });
+        const { data: vote } = await useAPI("/vote", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${useCookie("token").value}`,
+          },
+          body: formData,
+        });
+
+        selectedOption.value = -1;
+
+        if (vote.value.code !== 200) {
+          alertStore.openModal({
+            component: markRaw(AppAlertError),
+            props: {
+              text: vote.value.message,
+            },
+          });
+          voteLoading.value = false;
+          return;
+        }
+
+        alertStore.openModal({
+          component: markRaw(AppAlertSuccess),
+          props: {
+            text: vote.value.message,
+          },
+        });
+        useCookie("is-vote").value = true;
+        isVote.value = true;
+        voteLoading.value = false;
+      }
+    })
+    .catch(() => {});
+};
+
+onMounted(() => {
+  initModals();
+});
+</script>
+
+<style></style>
