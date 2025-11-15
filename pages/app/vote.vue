@@ -26,13 +26,13 @@
           class="pb-10 text-white w-full max-w-[1400px] mx-auto space-y-12"
         >
           <!-- TITLE -->
-          <div class="flex justify-center items-center min-h-screen">
+          <div class="flex flex-col justify-center min-h-[300px]">
             <div
               class="px-6 py-4 bg-black/50 backdrop-blur-md rounded-lg text-center"
             >
               <h3 class="text-title-3 font-bold leading-relaxed">
                 PEMILIHAN KETUA UMUM <br />
-                HIMfPUNAN MAHASISWA SISTEM INFORMASI <br />
+                HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
                 UNIVERSITAS JEMBER <br />
                 PERIODE 2025/2026
               </h3>
