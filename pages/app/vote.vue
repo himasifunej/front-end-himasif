@@ -1,30 +1,5 @@
 <template>
   <div class="bg-primary-950 text-white min-h-screen">
-
-    <!-- FOTO-FOTO KETUA DI BAGIAN ATAS -->
-    <div
-      v-if="candidates?.data"
-      class="w-full flex justify-center py-6 bg-primary-900 border-b border-primary-800"
-    >
-      <div class="flex space-x-6 overflow-x-auto px-4">
-        <div
-          v-for="ketua in candidates.data"
-          :key="ketua.id"
-          class="w-[160px] text-center flex-shrink-0"
-        >
-          <img
-            :src="getImageUrl(ketua.image)"
-            :alt="ketua.name"
-            class="w-full h-[160px] object-cover rounded-xl border border-primary-700"
-          />
-          <p class="mt-3 text-sm text-secondary uppercase font-semibold">
-            {{ ketua.name }}
-          </p>
-        </div>
-      </div>
-    </div>
-    <!-- END FOTO-FOTO KETUA -->
-
     <AppBackgroundHeader background-image="vote.jpeg" />
 
     <AppContentArea class="pt-4">
@@ -68,6 +43,7 @@
                       : 'bg-primary-900 border-primary-800'
                   "
                 >
+                  <!-- Background Image (di belakang) -->
                   <div class="absolute inset-0 opacity-20">
                     <img
                       :src="getImageUrl(ketua.image)"
@@ -76,9 +52,11 @@
                     />
                   </div>
 
+                  <!-- Content dengan gambar di depan -->
                   <div class="relative z-10">
                     <h4 class="text-title-2 py-5 text-center">{{ ketua.order }}</h4>
 
+                    <!-- Gambar Kandidat (di depan) -->
                     <div class="flex justify-center px-4">
                       <img
                         :src="getImageUrl(ketua.image)"
@@ -98,7 +76,6 @@
                       >
                         CALON KETUA UMUM
                       </p>
-
                       <div
                         class="h-20 flex items-center justify-center break-words"
                         lang="de"
@@ -107,7 +84,6 @@
                           {{ ketua.name }}
                         </h5>
                       </div>
-
                       <p
                         :class="
                           selectedOption == ketua.id
@@ -148,6 +124,7 @@
                       <div
                         class="w-[220px] rounded-[10px] border text-center bg-primary-900 border-primary-800 overflow-hidden relative"
                       >
+                        <!-- Background Image di Modal -->
                         <div class="absolute inset-0 opacity-20">
                           <img
                             :src="getImageUrl(infoKetua?.image)"
@@ -156,8 +133,11 @@
                           />
                         </div>
 
+                        <!-- Content Modal -->
                         <div class="relative z-10">
-                          <h4 class="text-title-2 py-5">{{ infoKetua?.order }}</h4>
+                          <h4 class="text-title-2 py-5">
+                            {{ infoKetua?.order }}
+                          </h4>
                           <img
                             :src="getImageUrl(infoKetua?.image)"
                             :alt="infoKetua?.name"
@@ -185,17 +165,22 @@
                     <div class="w-3/4 space-y-6 flex flex-col justify-center">
                       <div class="space-y-4">
                         <h3 class="text-title-2">Visi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.visi"></div>
+                        <div
+                          class="text-secondary"
+                          v-html="infoKetua?.visi"
+                        ></div>
                       </div>
 
                       <div class="space-y-4">
                         <h3 class="text-title-2">Misi</h3>
-                        <div class="text-secondary" v-html="infoKetua?.misi"></div>
+                        <div
+                          class="text-secondary"
+                          v-html="infoKetua?.misi"
+                        ></div>
                       </div>
                     </div>
                   </div>
                 </div>
-
                 <div class="flex justify-center mt-5">
                   <AppButton data-modal-hide="visimisi-modal">Tutup</AppButton>
                 </div>
@@ -286,11 +271,13 @@ const getImageUrl = (imageArray) => {
   if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url) {
     return imageArray[0].url;
   }
-  return "https://placehold.co/600x400?text=No+Image";
+  return 'https://placehold.co/600x400?text=No+Image';
 };
 
+// Handle image loading errors
 const handleImageError = (event) => {
-  event.target.src = "https://placehold.co/600x400?text=Image+Error";
+  console.error('Image failed to load:', event.target.src);
+  event.target.src = 'https://placehold.co/600x400?text=Image+Error';
 };
 
 const getInfoKetua = (ketua) => {
@@ -364,7 +351,6 @@ const submitVote = async function () {
             text: vote.value.message,
           },
         });
-
         useCookie("is-vote").value = true;
         isVote.value = true;
         voteLoading.value = false;
