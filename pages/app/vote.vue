@@ -1,6 +1,5 @@
 <template>
   <div class="bg-primary-950 text-white min-h-screen relative">
-
     <!-- BACKGROUND HEADER (belakang) -->
     <div class="absolute inset-0 z-0">
       <AppBackgroundHeader background-image="vote.jpeg" />
@@ -9,7 +8,6 @@
     <!-- CONTENT AREA (di depan background) -->
     <div class="relative z-20">
       <AppContentArea class="pt-4">
-
         <!-- COUNTDOWN (jika belum waktunya vote) -->
         <AppContainer
           v-if="vote_settings?.result && !isVoteTime"
@@ -38,81 +36,97 @@
               </h3>
             </div>
             <div class="w-[35%]">
-              <img src="https://placehold.co/400x300?text=Vote+Image" class="w-full h-auto rounded-lg" />
-            </div>
-          </div>
-
-          <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
-          <div class="flex justify-center relative z-30 overflow-x-auto">
-            <div class="flex space-x-4 max-w-full px-2">
-              <div
-                v-for="ketua in candidates?.data || []"
-                :key="ketua.id"
-                class="w-[300px] flex-shrink-0"
-              >
-                <div
-                  @click="selectOption(ketua.id)"
-                  class="cursor-pointer rounded-[10px] border overflow-hidden relative"
-                  :class="selectedOption == ketua.id
-                    ? 'bg-[#00BF08] border-[#3BC541]'
-                    : 'bg-primary-900 border-primary-800'"
-                >
-                  <!-- Background kecil untuk card -->
-                  <div class="absolute inset-0 opacity-20">
-                    <img
-                      :src="getImageUrl(ketua.image)"
-                      :alt="ketua.name + ' background'"
-                      class="w-full h-full object-cover blur-sm"
-                    />
-                  </div>
-
-                  <!-- Content depan -->
-                  <div class="relative z-10">
-                    <h4 class="text-title-2 py-5 text-center">
-                      {{ ketua.order }}
-                    </h4>
-
-                    <div class="flex justify-center px-4">
-                      <img
-                        :src="getImageUrl(ketua.image)"
-                        :alt="ketua.name"
-                        class="w-full object-cover h-[300px] rounded-lg"
-                        @error="handleImageError"
-                      />
-                    </div>
-
-                    <div class="p-4 space-y-2 text-center">
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
-                        CALON KETUA UMUM
-                      </p>
-
-                      <div class="h-20 flex items-center justify-center break-words" lang="de">
-                        <h5 class="text-xl font-bold uppercase">
-                          {{ ketua.name }}
-                        </h5>
+              <div class="flex justify-center relative z-30 overflow-x-auto">
+                <div class="flex space-x-4 max-w-full px-2">
+                  <div
+                    v-for="ketua in candidates?.data || []"
+                    :key="ketua.id"
+                    class="w-[300px] flex-shrink-0"
+                  >
+                    <div
+                      @click="selectOption(ketua.id)"
+                      class="cursor-pointer rounded-[10px] border overflow-hidden relative"
+                      :class="
+                        selectedOption == ketua.id
+                          ? 'bg-[#00BF08] border-[#3BC541]'
+                          : 'bg-primary-900 border-primary-800'
+                      "
+                    >
+                      <!-- Background kecil untuk card -->
+                      <div class="absolute inset-0 opacity-20">
+                        <img
+                          :src="getImageUrl(ketua.image)"
+                          :alt="ketua.name + ' background'"
+                          class="w-full h-full object-cover blur-sm"
+                        />
                       </div>
 
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
-                        SISTEM INFORMASI {{ ketua.year_of_study }}
-                      </p>
+                      <!-- Content depan -->
+                      <div class="relative z-10">
+                        <h4 class="text-title-2 py-5 text-center">
+                          {{ ketua.order }}
+                        </h4>
+
+                        <div class="flex justify-center px-4">
+                          <img
+                            :src="getImageUrl(ketua.image)"
+                            :alt="ketua.name"
+                            class="w-full object-cover h-[300px] rounded-lg"
+                            @error="handleImageError"
+                          />
+                        </div>
+
+                        <div class="p-4 space-y-2 text-center">
+                          <p
+                            :class="
+                              selectedOption == ketua.id
+                                ? 'text-[#B8E3B9]'
+                                : 'text-secondary'
+                            "
+                          >
+                            CALON KETUA UMUM
+                          </p>
+
+                          <div
+                            class="h-20 flex items-center justify-center break-words"
+                            lang="de"
+                          >
+                            <h5 class="text-xl font-bold uppercase">
+                              {{ ketua.name }}
+                            </h5>
+                          </div>
+
+                          <p
+                            :class="
+                              selectedOption == ketua.id
+                                ? 'text-[#B8E3B9]'
+                                : 'text-secondary'
+                            "
+                          >
+                            SISTEM INFORMASI {{ ketua.year_of_study }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- BUTTON VISI MISI -->
+                    <div class="flex justify-center mt-4">
+                      <AppButton
+                        class="border border-primary-800"
+                        data-modal-target="visimisi-modal"
+                        data-modal-toggle="visimisi-modal"
+                        @click="getInfoKetua(ketua)"
+                      >
+                        Visi & Misi
+                      </AppButton>
                     </div>
                   </div>
-                </div>
-
-                <!-- BUTTON VISI MISI -->
-                <div class="flex justify-center mt-4">
-                  <AppButton
-                    class="border border-primary-800"
-                    data-modal-target="visimisi-modal"
-                    data-modal-toggle="visimisi-modal"
-                    @click="getInfoKetua(ketua)"
-                  >
-                    Visi & Misi
-                  </AppButton>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
 
           <!-- BUTTON KIRIM -->
           <div class="flex justify-center">
@@ -127,17 +141,14 @@
                   aria-hidden="true"
                   class="w-4 h-4 text-white animate-spin fill-mediatek mr-2"
                   viewBox="0 0 100 101"
-                >
-                </svg>
+                ></svg>
               </div>
               Kirim Pilihan Saya
             </AppButton>
           </div>
-
         </AppContainer>
       </AppContentArea>
     </div>
-
   </div>
 </template>
 
@@ -154,11 +165,16 @@ const isVote = ref(useCookie("is-vote").value);
 const infoKetua = ref();
 const voteLoading = ref(false);
 
-const { data: vote_settings } = await useAPI("/vote_setting", { pick: ["result"] });
-const { data: candidates } = await useAPI("/voting_candidate", { query: { sort: "order" }, pick: ["data"] });
+const { data: vote_settings } = await useAPI("/vote_setting", {
+  pick: ["result"],
+});
+const { data: candidates } = await useAPI("/voting_candidate", {
+  query: { sort: "order" },
+  pick: ["data"],
+});
 
 const now = ref(new Date());
-setInterval(() => now.value = new Date(), 1000);
+setInterval(() => (now.value = new Date()), 1000);
 
 const isVoteTime = computed(() => {
   if (!vote_settings?.value?.result) return false;
@@ -166,15 +182,26 @@ const isVoteTime = computed(() => {
 });
 
 const getImageUrl = (imageArray) => {
-  if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url) return imageArray[0].url;
+  if (
+    imageArray &&
+    Array.isArray(imageArray) &&
+    imageArray.length > 0 &&
+    imageArray[0]?.url
+  )
+    return imageArray[0].url;
   return "https://placehold.co/600x400?text=No+Image";
 };
-const handleImageError = (e) => { e.target.src = "https://placehold.co/600x400?text=Image+Error"; };
-const getInfoKetua = (ketua) => infoKetua.value = ketua;
+const handleImageError = (e) => {
+  e.target.src = "https://placehold.co/600x400?text=Image+Error";
+};
+const getInfoKetua = (ketua) => (infoKetua.value = ketua);
 
 const selectOption = (i) => {
   if (isVote.value) {
-    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: "Anda sudah melakukan voting" } });
+    alertStore.openModal({
+      component: markRaw(AppAlertError),
+      props: { text: "Anda sudah melakukan voting" },
+    });
     return;
   }
   selectedOption.value = i;
@@ -182,23 +209,42 @@ const selectOption = (i) => {
 
 const submitVote = async () => {
   if (now.value > new Date(vote_settings.value.result.end_at)) {
-    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: "Vote telah ditutup" } });
+    alertStore.openModal({
+      component: markRaw(AppAlertError),
+      props: { text: "Vote telah ditutup" },
+    });
     return;
   }
 
-  await alertStore.openModal({ component: markRaw(AppAlertConfirm), props: { text: "Apakah kamu yakin dengan pilihanmu?" } })
+  await alertStore
+    .openModal({
+      component: markRaw(AppAlertConfirm),
+      props: { text: "Apakah kamu yakin dengan pilihanmu?" },
+    })
     .then(async (res) => {
       if (res) {
         voteLoading.value = true;
-        const formData = createFormData({ voting_candidate_id: selectedOption.value });
-        const { data: vote } = await useAPI("/vote", { method: "POST", headers: { Authorization: `Bearer ${useCookie("token").value}` }, body: formData });
+        const formData = createFormData({
+          voting_candidate_id: selectedOption.value,
+        });
+        const { data: vote } = await useAPI("/vote", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${useCookie("token").value}` },
+          body: formData,
+        });
         selectedOption.value = -1;
         if (vote.value.code !== 200) {
-          alertStore.openModal({ component: markRaw(AppAlertError), props: { text: vote.value.message } });
+          alertStore.openModal({
+            component: markRaw(AppAlertError),
+            props: { text: vote.value.message },
+          });
           voteLoading.value = false;
           return;
         }
-        alertStore.openModal({ component: markRaw(AppAlertSuccess), props: { text: vote.value.message } });
+        alertStore.openModal({
+          component: markRaw(AppAlertSuccess),
+          props: { text: vote.value.message },
+        });
         useCookie("is-vote").value = true;
         isVote.value = true;
         voteLoading.value = false;
