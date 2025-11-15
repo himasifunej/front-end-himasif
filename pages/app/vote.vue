@@ -67,9 +67,9 @@
 
                   <!-- Circle background dengan nomor urut -->
                   <div
-                    class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full flex items-center justify-center z-10"
+                    class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white rounded-full flex items-center justify-center z-10"
                   >
-                    <span class="text-black font-bold text-lg">{{
+                    <span class="text-black font-bold text-xl">{{
                       ketua.order
                     }}</span>
                   </div>
