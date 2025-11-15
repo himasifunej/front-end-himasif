@@ -1,119 +1,93 @@
 <template>
   <div class="bg-primary-950 text-white min-h-screen relative">
-    <!-- BACKGROUND HEADER (belakang) -->
+    <!-- BACKGROUND HEADER -->
     <div class="absolute inset-0 z-0">
       <AppBackgroundHeader background-image="vote.jpeg" />
     </div>
 
-    <!-- CONTENT AREA (di depan background) -->
+    <!-- MAIN CONTENT -->
     <div class="relative z-20">
-      <AppContentArea class="pt-4">
-        <!-- COUNTDOWN (jika belum waktunya vote) -->
+      <AppContentArea class="pt-6 px-4 md:px-8 lg:px-12">
+
+        <!-- COUNTDOWN SECTION -->
         <AppContainer
           v-if="vote_settings?.result && !isVoteTime"
-          class="pb-5 text-white h-[600px] flex flex-col justify-center w-2/3 space-y-10"
+          class="pb-10 text-white min-h-[500px] flex flex-col justify-center items-center space-y-10 w-full max-w-3xl mx-auto"
         >
           <h1 class="text-title-1 text-center">Countdown :</h1>
           <AppCountdown
             :end="vote_settings.result.start_at"
-            class="p-8 bg-black/75 rounded"
+            class="p-6 md:p-8 bg-black/70 rounded-xl w-full"
           />
         </AppContainer>
 
-        <!-- VOTE SECTION (kalau sudah waktu vote) -->
+        <!-- VOTE SECTION -->
         <AppContainer
           v-if="vote_settings?.result && isVoteTime"
-          class="pb-5 text-white h-full flex flex-col justify-center w-full max-w-[1200px] mx-auto space-y-10 overflow-hidden"
+          class="pb-10 text-white w-full max-w-[1400px] mx-auto space-y-12"
         >
-          <!-- TULISAN + GAMBAR SEJARAH -->
-          <div class="flex justify-between items-center mb-8">
-            <div class="text-left max-w-[40%]">
-              <h3 class="text-title-2 font-bold">
+          <!-- TITLE + IMAGE ROW -->
+          <div class="flex flex-col lg:flex-row justify-between items-center gap-10">
+            <!-- LEFT TEXT -->
+            <div class="text-left w-full lg:w-1/2">
+              <h3 class="text-title-3 font-bold leading-relaxed text-center lg:text-left">
                 PEMILIHAN KETUA UMUM <br />
                 HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
                 UNIVERSITAS JEMBER <br />
                 PERIODE 2025/2026
               </h3>
             </div>
-            <div class="w-[60%] space-y-4">
-              <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
-              <div class="flex justify-center relative z-30 overflow-x-auto">
-                <div class="flex space-x-4 max-w-full px-2">
+
+            <!-- RIGHT: CANDIDATES LIST -->
+            <div class="w-full lg:w-1/2 space-y-6">
+              <div class="flex justify-center relative z-30 overflow-x-auto pb-2">
+                <div class="flex space-x-5 max-w-full px-2">
                   <div
                     v-for="ketua in candidates?.data || []"
                     :key="ketua.id"
-                    class="w-[300px] flex-shrink-0"
+                    class="w-[260px] md:w-[300px] flex-shrink-0"
                   >
                     <div
                       @click="selectOption(ketua.id)"
-                      class="cursor-pointer rounded-[10px] border overflow-hidden relative"
-                      :class="
-                        selectedOption == ketua.id
-                          ? 'bg-[#00BF08] border-[#3BC541]'
-                          : 'bg-primary-900 border-primary-800'
-                      "
+                      class="cursor-pointer rounded-xl border relative overflow-hidden transition duration-200"
+                      :class="selectedOption == ketua.id ? 'bg-[#00BF08] border-[#3BC541]' : 'bg-primary-900 border-primary-800'"
                     >
-                      <!-- Background kecil untuk card -->
+                      <!-- Card background blur -->
                       <div class="absolute inset-0 opacity-20">
-                        <img
-                          :src="getImageUrl(ketua.image)"
-                          :alt="ketua.name + ' background'"
-                          class="w-full h-full object-cover blur-sm"
-                        />
+                        <img :src="getImageUrl(ketua.image)" class="w-full h-full object-cover blur-sm" />
                       </div>
 
-                      <!-- Content depan -->
+                      <!-- Card content -->
                       <div class="relative z-10">
-                        <h4 class="text-title-2 py-5 text-center">
-                          {{ ketua.order }}
-                        </h4>
+                        <h4 class="text-title-2 py-4 text-center">{{ ketua.order }}</h4>
 
                         <div class="flex justify-center px-4">
                           <img
                             :src="getImageUrl(ketua.image)"
                             :alt="ketua.name"
-                            class="w-full object-cover h-[300px] rounded-lg"
+                            class="w-full object-cover h-[260px] md:h-[300px] rounded-lg"
                             @error="handleImageError"
                           />
                         </div>
 
-                        <div class="p-4 space-y-2 text-center">
-                          <p
-                            :class="
-                              selectedOption == ketua.id
-                                ? 'text-[#B8E3B9]'
-                                : 'text-secondary'
-                            "
-                          >
-                            CALON KETUA UMUM
-                          </p>
+                        <div class="p-4 space-y-1 text-center">
+                          <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">CALON KETUA UMUM</p>
 
-                          <div
-                            class="h-20 flex items-center justify-center break-words"
-                            lang="de"
-                          >
-                            <h5 class="text-xl font-bold uppercase">
-                              {{ ketua.name }}
-                            </h5>
-                          </div>
+                          <h5 class="text-lg md:text-xl font-bold uppercase min-h-[50px] flex items-center justify-center">
+                            {{ ketua.name }}
+                          </h5>
 
-                          <p
-                            :class="
-                              selectedOption == ketua.id
-                                ? 'text-[#B8E3B9]'
-                                : 'text-secondary'
-                            "
-                          >
+                          <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
                             SISTEM INFORMASI {{ ketua.year_of_study }}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <!-- BUTTON VISI MISI -->
+                    <!-- VISI MISI BUTTON -->
                     <div class="flex justify-center mt-4">
                       <AppButton
-                        class="border text-white hover:bg-[#FF7E1D] border-primary-800"
+                        class="border border-primary-800 text-white hover:bg-[#FF7E1D] hover:text-black transition-colors duration-200 px-4 py-2 rounded-lg"
                         data-modal-target="visimisi-modal"
                         data-modal-toggle="visimisi-modal"
                         @click="getInfoKetua(ketua)"
@@ -125,20 +99,16 @@
                 </div>
               </div>
 
-              <!-- BUTTON KIRIM -->
-              <div class="flex mx-auto justify-center">
+              <!-- SUBMIT BUTTON -->
+              <div class="flex justify-center">
                 <AppButton
-                  class="border text-white border-primary-800 flex items-center"
+                  class="border text-white border-primary-800 px-6 py-3 rounded-lg flex items-center hover:bg-primary-700 transition"
                   :disabled="selectedOption == -1"
                   @click="submitVote"
                   variant="secondary"
                 >
                   <div role="status" v-if="voteLoading">
-                    <svg
-                      aria-hidden="true"
-                      class="w-4 h-4 text-white animate-spin fill-mediatek mr-2"
-                      viewBox="0 0 100 101"
-                    ></svg>
+                    <svg class="w-4 h-4 animate-spin mr-2" viewBox="0 0 100 101"></svg>
                   </div>
                   Kirim Pilihan Saya
                 </AppButton>
@@ -146,6 +116,7 @@
             </div>
           </div>
         </AppContainer>
+
       </AppContentArea>
     </div>
   </div>
