@@ -113,7 +113,7 @@
                     <!-- BUTTON VISI MISI -->
                     <div class="flex justify-center mt-4">
                       <AppButton
-                        class="border border-primary-800"
+                        class="border text-white hover:bg-[#FF7E1D] border-primary-800"
                         data-modal-target="visimisi-modal"
                         data-modal-toggle="visimisi-modal"
                         @click="getInfoKetua(ketua)"
@@ -128,7 +128,7 @@
               <!-- BUTTON KIRIM -->
               <div class="flex justify-center">
                 <AppButton
-                  class="border border-primary-800 flex items-center"
+                  class="border text-white border-primary-800 flex items-center"
                   :disabled="selectedOption == -1"
                   @click="submitVote"
                   variant="secondary"
