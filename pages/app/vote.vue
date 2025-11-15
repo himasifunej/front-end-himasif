@@ -27,7 +27,7 @@
         >
           <!-- TULISAN + GAMBAR SEJARAH -->
           <div class="flex justify-between items-center mb-8">
-            <div class="text-left max-w-[30%]">
+            <div class="text-left max-w-[40%]">
               <h3 class="text-title-2 font-bold">
                 PEMILIHAN KETUA UMUM <br />
                 HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
@@ -35,7 +35,7 @@
                 PERIODE 2025/2026
               </h3>
             </div>
-            <div class="w-[35%]">
+            <div class="w-[60%]">
               <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
               <div class="flex justify-center relative z-30 overflow-x-auto">
                 <div class="flex space-x-4 max-w-full px-2">
