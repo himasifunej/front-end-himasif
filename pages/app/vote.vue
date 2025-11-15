@@ -26,9 +26,9 @@
           class="pb-10 text-white w-full max-w-[1400px] mx-auto space-y-12"
         >
           <!-- TITLE -->
-          <div class="flex flex-col justify-center min-h-[300px]">
+          <div class="flex justify-center w-full">
             <div
-              class="px-6 py-4 bg-black/50 backdrop-blur-md rounded-lg text-center"
+              class="inline-block px-6 py-4 bg-black/50 backdrop-blur-md rounded-lg text-center"
             >
               <h3 class="text-title-3 font-bold leading-relaxed">
                 PEMILIHAN KETUA UMUM <br />
