@@ -1,6 +1,5 @@
 <template>
   <div class="bg-[#111111] text-white min-h-screen relative">
-
     <!-- BACKGROUND HEADER -->
     <div class="absolute inset-0 z-0">
       <AppBackgroundHeader background-image="vote.jpeg" />
@@ -9,7 +8,6 @@
     <!-- MAIN CONTENT -->
     <div class="relative z-20">
       <AppContentArea class="pt-6 px-4 md:px-8 lg:px-12">
-
         <!-- COUNTDOWN SECTION -->
         <AppContainer
           v-if="vote_settings?.result && !isVoteTime"
@@ -28,7 +26,9 @@
           class="pb-10 text-white w-full max-w-[1400px] mx-auto space-y-12"
         >
           <!-- TITLE -->
-          <div class="text-center mb-8">
+          <div
+            class="inline-block px-6 py-4 bg-black/50 backdrop-blur-md rounded-lg text-center"
+          >
             <h3 class="text-title-3 font-bold leading-relaxed">
               PEMILIHAN KETUA UMUM <br />
               HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
@@ -49,16 +49,25 @@
                 <div
                   @click="selectOption(ketua.id)"
                   class="cursor-pointer rounded-xl border relative overflow-hidden transition duration-200"
-                  :class="selectedOption == ketua.id ? 'bg-[#00BF08] border-[#3BC541]' : 'bg-primary-900 border-primary-800'"
+                  :class="
+                    selectedOption == ketua.id
+                      ? 'bg-[#00BF08] border-[#3BC541]'
+                      : 'bg-primary-900 border-primary-800'
+                  "
                 >
                   <!-- Background blur -->
                   <div class="absolute inset-0 opacity-20">
-                    <img :src="getImageUrl(ketua.image)" class="w-full h-full object-cover blur-sm" />
+                    <img
+                      :src="getImageUrl(ketua.image)"
+                      class="w-full h-full object-cover blur-sm"
+                    />
                   </div>
 
                   <!-- Content -->
                   <div class="relative z-10">
-                    <h4 class="text-title-2 py-4 text-center">{{ ketua.order }}</h4>
+                    <h4 class="text-title-2 py-4 text-center">
+                      {{ ketua.order }}
+                    </h4>
                     <div class="flex justify-center px-4">
                       <img
                         :src="getImageUrl(ketua.image)"
@@ -68,13 +77,27 @@
                       />
                     </div>
                     <div class="p-4 space-y-1 text-center">
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
+                      <p
+                        :class="
+                          selectedOption == ketua.id
+                            ? 'text-[#B8E3B9]'
+                            : 'text-secondary'
+                        "
+                      >
                         CALON KETUA UMUM
                       </p>
-                      <h5 class="text-lg md:text-xl font-bold uppercase min-h-[50px] flex items-center justify-center">
+                      <h5
+                        class="text-lg md:text-xl font-bold uppercase min-h-[50px] flex items-center justify-center"
+                      >
                         {{ ketua.name }}
                       </h5>
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
+                      <p
+                        :class="
+                          selectedOption == ketua.id
+                            ? 'text-[#B8E3B9]'
+                            : 'text-secondary'
+                        "
+                      >
                         SISTEM INFORMASI {{ ketua.year_of_study }}
                       </p>
                     </div>
@@ -103,7 +126,10 @@
               variant="secondary"
             >
               <div role="status" v-if="voteLoading">
-                <svg class="w-4 h-4 animate-spin mr-2" viewBox="0 0 100 101"></svg>
+                <svg
+                  class="w-4 h-4 animate-spin mr-2"
+                  viewBox="0 0 100 101"
+                ></svg>
               </div>
               Kirim Pilihan Saya
             </AppButton>
@@ -120,21 +146,34 @@
       class="hidden overflow-y-auto fixed inset-0 z-50 flex justify-center items-center bg-black/80"
     >
       <div class="relative p-4 w-full max-w-6xl max-h-full">
-        <div class="relative bg-primary-950 rounded-2xl shadow-lg p-8 flex flex-col lg:flex-row gap-6">
-          
+        <div
+          class="relative bg-primary-950 rounded-2xl shadow-lg p-8 flex flex-col lg:flex-row gap-6"
+        >
           <!-- KIRI: Foto kandidat -->
           <div class="w-full lg:w-1/4">
-            <div class="w-full rounded-xl border relative overflow-hidden bg-primary-900 border-primary-800 text-center">
+            <div
+              class="w-full rounded-xl border relative overflow-hidden bg-primary-900 border-primary-800 text-center"
+            >
               <div class="absolute inset-0 opacity-20">
-                <img :src="getImageUrl(infoKetua?.image)" class="w-full h-full object-cover blur-sm" />
+                <img
+                  :src="getImageUrl(infoKetua?.image)"
+                  class="w-full h-full object-cover blur-sm"
+                />
               </div>
               <div class="relative z-10">
                 <h4 class="text-title-2 py-4">{{ infoKetua?.order }}</h4>
-                <img :src="getImageUrl(infoKetua?.image)" class="w-full h-[200px] object-cover rounded-lg" />
+                <img
+                  :src="getImageUrl(infoKetua?.image)"
+                  class="w-full h-[200px] object-cover rounded-lg"
+                />
                 <div class="p-4 space-y-2">
                   <p class="text-secondary">CALON KETUA UMUM</p>
-                  <h5 class="text-xl font-bold uppercase">{{ infoKetua?.name }}</h5>
-                  <p class="text-secondary">SISTEM INFORMASI {{ infoKetua?.year_of_study }}</p>
+                  <h5 class="text-xl font-bold uppercase">
+                    {{ infoKetua?.name }}
+                  </h5>
+                  <p class="text-secondary">
+                    SISTEM INFORMASI {{ infoKetua?.year_of_study }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -174,8 +213,13 @@ const infoKetua = ref();
 const voteLoading = ref(false);
 const modalInstance = ref(null);
 
-const { data: vote_settings } = await useAPI("/vote_setting", { pick: ["result"] });
-const { data: candidates } = await useAPI("/voting_candidate", { query: { sort: "order" }, pick: ["data"] });
+const { data: vote_settings } = await useAPI("/vote_setting", {
+  pick: ["result"],
+});
+const { data: candidates } = await useAPI("/voting_candidate", {
+  query: { sort: "order" },
+  pick: ["data"],
+});
 
 const now = ref(new Date());
 setInterval(() => (now.value = new Date()), 1000);
@@ -185,11 +229,17 @@ const isVoteTime = computed(() => {
 });
 
 const getImageUrl = (imageArray) => {
-  if (imageArray && Array.isArray(imageArray) && imageArray.length > 0 && imageArray[0]?.url)
+  if (
+    imageArray &&
+    Array.isArray(imageArray) &&
+    imageArray.length > 0 &&
+    imageArray[0]?.url
+  )
     return imageArray[0].url;
   return "https://placehold.co/600x400?text=No+Image";
 };
-const handleImageError = (e) => (e.target.src = "https://placehold.co/600x400?text=Image+Error");
+const handleImageError = (e) =>
+  (e.target.src = "https://placehold.co/600x400?text=Image+Error");
 
 const selectOption = (id) => {
   selectedOption.value = id;
@@ -209,7 +259,10 @@ onMounted(() => {
 const submitVote = async () => {
   if (!vote_settings?.value?.result) return;
   if (now.value > new Date(vote_settings.value.result.end_at)) {
-    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: "Vote telah ditutup" } });
+    alertStore.openModal({
+      component: markRaw(AppAlertError),
+      props: { text: "Vote telah ditutup" },
+    });
     return;
   }
 
@@ -220,7 +273,9 @@ const submitVote = async () => {
 
   if (res) {
     voteLoading.value = true;
-    const formData = createFormData({ voting_candidate_id: selectedOption.value });
+    const formData = createFormData({
+      voting_candidate_id: selectedOption.value,
+    });
     const { data: vote } = await useAPI("/vote", {
       method: "POST",
       headers: { Authorization: `Bearer ${useCookie("token").value}` },
@@ -232,9 +287,15 @@ const submitVote = async () => {
 
     if (vote.value.code === 200) {
       useCookie("is-vote").value = true;
-      alertStore.openModal({ component: markRaw(AppAlertSuccess), props: { text: vote.value.message } });
+      alertStore.openModal({
+        component: markRaw(AppAlertSuccess),
+        props: { text: vote.value.message },
+      });
     } else {
-      alertStore.openModal({ component: markRaw(AppAlertError), props: { text: vote.value.message } });
+      alertStore.openModal({
+        component: markRaw(AppAlertError),
+        props: { text: vote.value.message },
+      });
     }
   }
 };
