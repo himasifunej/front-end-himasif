@@ -35,7 +35,7 @@
                 PERIODE 2025/2026
               </h3>
             </div>
-            <div class="w-[60%]">
+            <div class="w-[60%] space-y-4">
               <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
               <div class="flex justify-center relative z-30 overflow-x-auto">
                 <div class="flex space-x-4 max-w-full px-2">
