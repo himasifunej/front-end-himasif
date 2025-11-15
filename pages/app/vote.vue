@@ -126,9 +126,9 @@
               </div>
 
               <!-- BUTTON KIRIM -->
-              <div class="flex justify-center">
+              <div class="flex mx-auto justify-center">
                 <AppButton
-                  class="border text-white mx-auto border-primary-800 flex items-center"
+                  class="border text-white border-primary-800 flex items-center"
                   :disabled="selectedOption == -1"
                   @click="submitVote"
                   variant="secondary"
