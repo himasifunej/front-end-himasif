@@ -37,9 +37,6 @@
                 PERIODE 2025/2026
               </h3>
             </div>
-            <div class="w-[35%]">
-              <img src="https://placehold.co/400x300?text=Vote+Image" class="w-full h-auto rounded-lg" />
-            </div>
           </div>
 
           <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
