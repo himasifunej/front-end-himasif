@@ -65,16 +65,18 @@
                     />
                   </div>
 
-                  <!-- Circle background dekoratif -->
+                  <!-- Circle background dengan nomor urut -->
                   <div
-                    class="absolute -top-5 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-orange-500 rounded-full opacity-70 z-5"
-                  ></div>
+                    class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full flex items-center justify-center z-10"
+                  >
+                    <span class="text-black font-bold text-lg">{{
+                      ketua.order
+                    }}</span>
+                  </div>
 
                   <!-- Content -->
-                  <div class="relative z-10">
-                    <h4 class="text-title-2 py-4 text-center">
-                      {{ ketua.order }}
-                    </h4>
+                  <div class="relative z-10 mt-10">
+                    <!-- tambah margin-top agar konten tidak tertutup lingkaran -->
                     <div class="flex justify-center px-4">
                       <img
                         :src="getImageUrl(ketua.image)"
