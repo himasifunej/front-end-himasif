@@ -27,7 +27,7 @@
         >
           <!-- TULISAN + GAMBAR SEJARAH -->
           <div class="flex justify-between items-center mb-8">
-            <div class="text-left max-w-[60%]">
+            <div class="text-left max-w-[30%]">
               <h3 class="text-title-2 font-bold">
                 PEMILIHAN KETUA UMUM <br />
                 HIMPUNAN MAHASISWA SISTEM INFORMASI <br />
@@ -36,6 +36,7 @@
               </h3>
             </div>
             <div class="w-[35%]">
+              <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
               <div class="flex justify-center relative z-30 overflow-x-auto">
                 <div class="flex space-x-4 max-w-full px-2">
                   <div
@@ -123,28 +124,26 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- LIST KANDIDAT DI DEPAN BACKGROUND -->
-
-          <!-- BUTTON KIRIM -->
-          <div class="flex justify-center">
-            <AppButton
-              class="border border-primary-800 flex items-center"
-              :disabled="selectedOption == -1"
-              @click="submitVote"
-              variant="secondary"
-            >
-              <div role="status" v-if="voteLoading">
-                <svg
-                  aria-hidden="true"
-                  class="w-4 h-4 text-white animate-spin fill-mediatek mr-2"
-                  viewBox="0 0 100 101"
-                ></svg>
+              <!-- BUTTON KIRIM -->
+              <div class="flex justify-center">
+                <AppButton
+                  class="border border-primary-800 flex items-center"
+                  :disabled="selectedOption == -1"
+                  @click="submitVote"
+                  variant="secondary"
+                >
+                  <div role="status" v-if="voteLoading">
+                    <svg
+                      aria-hidden="true"
+                      class="w-4 h-4 text-white animate-spin fill-mediatek mr-2"
+                      viewBox="0 0 100 101"
+                    ></svg>
+                  </div>
+                  Kirim Pilihan Saya
+                </AppButton>
               </div>
-              Kirim Pilihan Saya
-            </AppButton>
+            </div>
           </div>
         </AppContainer>
       </AppContentArea>
