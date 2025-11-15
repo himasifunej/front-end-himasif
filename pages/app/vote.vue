@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-primary-950 text-white min-h-screen relative">
+  <div class=" bg-[#111111] text-white min-h-screen relative">
     <!-- BACKGROUND HEADER -->
     <div class="absolute inset-0 z-0">
       <AppBackgroundHeader background-image="vote.jpeg" />
