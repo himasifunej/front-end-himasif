@@ -65,6 +65,11 @@
                     />
                   </div>
 
+                  <!-- Circle background dekoratif -->
+                  <div
+                    class="absolute -top-5 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-orange-500 rounded-full opacity-70 z-5"
+                  ></div>
+
                   <!-- Content -->
                   <div class="relative z-10">
                     <h4 class="text-title-2 py-4 text-center">
