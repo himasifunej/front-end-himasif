@@ -79,17 +79,17 @@
                     </div>
 
                     <div class="p-4 space-y-2 text-center">
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
+                      <p :class="selectedOption == ketua.id ? 'text-[#000000]' : 'text-secondary'">
                         CALON KETUA UMUM
                       </p>
 
                       <div class="h-20 flex items-center justify-center break-words" lang="de">
-                        <h5 class="text-xl font-bold uppercase">
+                        <h5 class=" 'text-[#000000]'text-xl font-bold uppercase">
                           {{ ketua.name }}
                         </h5>
                       </div>
 
-                      <p :class="selectedOption == ketua.id ? 'text-[#B8E3B9]' : 'text-secondary'">
+                      <p :class="selectedOption == ketua.id ? 'text-[#000000]' : 'text-secondary'">
                         SISTEM INFORMASI {{ ketua.year_of_study }}
                       </p>
                     </div>
