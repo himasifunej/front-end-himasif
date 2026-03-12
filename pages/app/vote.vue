@@ -71,9 +71,8 @@
 >
   <span class="text-black font-bold text-xl">{{ ketua.order }}</span>
 </div>
-                  </div>
 
-                  <!-- Content -->
+<!-- Content -->
                   <div class="relative z-10 mt-10">
                     <!-- tambah margin-top agar konten tidak tertutup lingkaran -->
                     <div class="flex justify-center px-4">
