@@ -87,113 +87,220 @@
                     <section id="divisi" class="scroll-mt-[50px] nav-el">
                         <AppContainer>
                             <div class="py-6 border-b border-b-border-primary dark:border-b-border-primary-dark">
+
                                 <h3 class="text-title-3-sm md:text-title-3">Divisi</h3>
 
-                                <p
-                                    class="text-deskripsi-sm md:text-deskripsi text-text-secondary dark:text-text-secondary-dark mt-1 mb-4">
+                                <p class="text-deskripsi-sm md:text-deskripsi text-text-secondary dark:text-text-secondary-dark mt-1 mb-4">
                                     Kerangka Dasar Program Kerja HIMASIF merupakan gambaran umum tentang bentuk
                                     dan arah dari program kerja HIMASIF yang dijabarkan dengan prioritas dan
-                                    kebutuhan. Terbentuklah 5 divisi dengan masing-masing tugas pokok dan fungsi untuk
-                                    mewujudkan visi & misi yang maksimal.</p>
-
-
+                                    kebutuhan. Terbentuklah 5 divisi dengan masing-masing tugas pokok dan fungsi
+                                    untuk mewujudkan visi & misi yang maksimal.
+                                </p>
 
                                 <div class="overflow-x-auto -mx-8 no-scrollbar px-8">
 
-                                    <div
-                                        class="grid grid-flow-col lg:grid-flow-row lg:grid-cols-4 xl:grid-cols-5 gap-4.5">
-                                        <template v-for="division in divisions.data">
-                                            <div class="cursor-pointer rounded-lg shadow bg-card-primary border border-border-primary hover:bg-card-hover dark:bg-card-primary-dark dark:border-border-primary-dark dark:hover:bg-card-hover-dark w-fit"
-                                                data-modal-target="divisi-modal" data-modal-toggle="divisi-modal"
-                                                v-if="division.isHighlight === 1">
-                                                <div class="px-7 py-6 w-[250px] md:w[200px] lg:w-full">
-                                                    <NuxtImg class="w-[200px] lg:w-full" sizes="250"
-                                                        :src="division.logo[0].url" alt="" />
-                                                </div>
-                                                <div class="py-6 px-6">
+                                    <div class="grid grid-flow-col lg:grid-flow-row lg:grid-cols-4 xl:grid-cols-5 gap-4.5">
 
-                                                    <h5 class="mb-2 text-title-4-sm md:text-title-4"
-                                                        :class="getTextDivisionColor(division.id)">
+                                        <template v-for="division in divisions.data">
+
+                                            <!-- CARD DIVISI -->
+                                            <div
+                                                v-if="division.isHighlight === 1"
+                                                class="cursor-pointer rounded-lg shadow bg-card-primary border border-border-primary hover:bg-card-hover dark:bg-card-primary-dark dark:border-border-primary-dark dark:hover:bg-card-hover-dark w-fit"
+                                                :data-modal-target="'divisi-modal-' + division.id"
+                                                :data-modal-toggle="'divisi-modal-' + division.id"
+                                            >
+                                                <div class="px-7 py-6 w-[250px] md:w[200px] lg:w-full">
+                                                    <NuxtImg
+                                                        class="w-[200px] lg:w-full"
+                                                        sizes="250"
+                                                        :src="division.logo[0].url"
+                                                    />
+                                                </div>
+
+                                                <div class="py-6 px-6">
+                                                    <h5
+                                                        class="mb-2 text-title-4-sm md:text-title-4"
+                                                        :class="getTextDivisionColor(division.id)"
+                                                    >
                                                         {{ division.title }}
                                                     </h5>
 
-                                                    <p
-                                                        class="text-text-secondary dark:text-text-secondary-dark text-deskripsi-sm md:text-deskripsi">
-                                                        {{
-                                                            division.description }}
+                                                    <p class="text-text-secondary dark:text-text-secondary-dark text-deskripsi-sm md:text-deskripsi">
+                                                        {{ division.description }}
                                                     </p>
                                                 </div>
                                             </div>
-                                        </template>
-                                    </div>
 
-                                    <div id="divisi-modal" tabindex="-1" aria-hidden="true"
-                                        class="hidden overflow-y-auto overflow-x-hidden bg-black/80 fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%)] max-h-full">
-                                        <div class="relative p-4 w-full max-w-2xl max-h-full">
-                                            <!-- Modal content -->
+
+                                            <!-- MODAL DIVISI -->
                                             <div
-                                                class="relative bg-card-primary dark:bg-card-primary-dark rounded-[32px] border border-border-primary dark:border-border-primary-dark p-8">
-                                                <!-- Modal header -->
-                                                <NuxtImg src="/img/background/divisi.png" sizes="600" class="w-full">
-                                                </NuxtImg>
+                                                v-if="division.isHighlight === 1"
+                                                :id="'divisi-modal-' + division.id"
+                                                tabindex="-1"
+                                                aria-hidden="true"
+                                                class="hidden overflow-y-auto overflow-x-hidden bg-black/80 fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%)] max-h-full"
+                                            >
 
-                                                <!-- Modal body -->
-                                                <div class="p-4 md:p-5 space-y-4">
-                                                    <p
-                                                        class="text-deskripsi-sm md:text-deskripsi text-text-primary dark:text-text-primary-dark">
-                                                        Divisi Pengembangan Sumber Daya Mahasiswa yang berorientasi pada
-                                                        potensi
-                                                        manajerial dan pengembangan kemampuan dalam bidang akademik.
-                                                    </p>
+                                                <div class="relative p-4 w-full max-w-2xl max-h-full">
 
-                                                    <h3
-                                                        class="text-title-5-sm md:text-title-5 text-text-secondary dark:text-text-secondary-dark">
-                                                        Tugas
-                                                        Pokok dan
-                                                        Fungsi</h3>
-                                                    <p class="text-deskripsi-sm md:text-deskripsi">
-                                                        1. Melaksanakan program kerja organisasi sesuai porsi yang telah
-                                                        ditetapkan dalam
-                                                        rapat kerja HIMASIF.
-                                                        2. Mengkoordinasikan setiap program kegiatan yang akan
-                                                        dilaksanakan kepada
-                                                        Ketua Umum HIMASIF.
-                                                        3. Mengadakan kegiatan kemahasiswaan yang bersifat mengembangkan
-                                                        sumber daya
-                                                        mahasiswa di bidang akademik dengan tujuan akhir adalah
-                                                        mahasiswa yang mampu
-                                                        berprestasi dan berkompeten.
-                                                        4. Mengadakan kegiatan kemahasiswaan bidang akademik yang
-                                                        bersifat
-                                                        pengembangan hardskill.
-                                                        5. Menjadi koordinator kelompok minat yang dibentuk HIMASIF
-                                                        serta memfasilitasi
-                                                        kebutuhan kelompok minat tersebut.
-                                                        6. Memberikan laporan pertanggungjawaban dari setiap kegiatan
-                                                        yang telah
-                                                        dilaksanakan kepada Ketua Umum HIMASIF.
-                                                        7. Membuat laporan pertanggungjawaban selama satu periode
-                                                        menjabat
-                                                    </p>
+                                                    <div class="relative bg-card-primary dark:bg-card-primary-dark rounded-[32px] border border-border-primary dark:border-border-primary-dark p-8">
+
+                                                        <!-- HEADER -->
+                                                        <NuxtImg
+                                                            v-if="division.id === 1"
+                                                            src="/img/background/divisi-psdm.png"
+                                                            sizes="600"
+                                                            class="w-full"
+                                                        />
+
+                                                        <NuxtImg
+                                                            v-else-if="division.id === 3"
+                                                            src="/img/background/divisi-kader.png"
+                                                            sizes="600"
+                                                            class="w-full"
+                                                        />
+
+                                                        <NuxtImg
+                                                            v-else-if="division.id === 4"
+                                                            src="/img/background/divisi-litbang.png"
+                                                            sizes="600"
+                                                            class="w-full"
+                                                        />
+
+                                                        <NuxtImg
+                                                            v-else-if="division.id === 5"
+                                                            src="/img/background/divisi-humas.png"
+                                                            sizes="600"
+                                                            class="w-full"
+                                                        />
+
+                                                        <NuxtImg
+                                                            v-else-if="division.id === 6"
+                                                            src="/img/background/divisi-mediatek.png"
+                                                            sizes="600"
+                                                            class="w-full"
+                                                        />
+
+                                                        <!-- BODY -->
+                                                        <div class="p-4 md:p-5 space-y-4">
+
+                                                            <p class="text-deskripsi-sm md:text-deskripsi text-text-primary dark:text-text-primary-dark">
+
+                                                                <template v-if="division.id === 1">
+                                                                    Divisi Pengembangan Sumber Daya Mahasiswa berfokus pada peningkatan kompetensi akademik serta pengembangan kemampuan manajerial mahasiswa.
+                                                                </template>
+
+                                                                <template v-if="division.id === 3">
+                                                                    Divisi Kaderisasi yang berorientasi pada potensi mahasiswa dalam bidang keorganisasian dan pengembangan kemampuan non akademik.
+                                                                </template>
+
+                                                                <template v-if="division.id === 4">
+                                                                    Divisi Penelitian dan Pengembangan yang berorientasi pada Tri Dharma Perguruan Tinggi untuk penelitian dan pengembangan inovasi anggota dan keorganisasian HIMASIF, serta menumbuhkan kewirausahaan guna tercapainya cita-cita kemandirian organisasi.
+                                                                </template>
+
+                                                                <template v-if="division.id === 5">
+                                                                    Divisi Hubungan Masyarakat berorientasi pada komunikasi, memberi atau menerima informasi untuk HIMASIF, serta menambah dan menjaga relasi dengan instansi atau organisasi lain.
+                                                                </template>
+
+                                                                <template v-if="division.id === 6">
+                                                                    Divisi Media dan Teknologi yang berorientasi pada penyedia media informasi dan komunikasi organisasi serta pengembang teknologi bagi anggota dan pengurus HIMASIF.
+                                                                </template>
+
+                                                            </p>
+
+                                                            <h3 class="text-title-5-sm md:text-title-5 text-text-secondary dark:text-text-secondary-dark">
+                                                                Tugas Pokok dan Fungsi
+                                                            </h3>
+
+                                                            <p class="text-deskripsi-sm md:text-deskripsi">
+
+                                                                <template v-if="division.id === 1">
+                                                                    1. Melaksanakan program kerja organisasi sesuai porsi yang telah ditetapkan dalam rapat kerja HIMASIF.<br>
+                                                                    2. Mengoordinasikan setiap program kegiatan yang akan dilaksanakan kepada Ketua Umum HIMASIF.<br>
+                                                                    3. Mengadakan kegiatan kemahasiswaan yang bersifat mengembangkan sumber daya mahasiswa di bidang akademik dengan tujuan akhir adalah mahasiswa yang mampu berprestasi dan berkompeten.<br>
+                                                                    4. Mengadakan kegiatan kemahasiswaan bidang akademik yang bersifat pengembangan hardskill.<br>
+                                                                    5. Menjadi koordinator kelompok minat yang dibentuk HIMASIF serta memfasilitasi kebutuhan kelompok minat tersebut.<br>
+                                                                    6. Membuat laporan pertanggungjawaban selama satu periode menjabat.<br>
+                                                                    7. Memberikan laporan pertanggungjawaban dari setiap kegiatan yang telah dilaksanakan kepada Ketua Umum dan anggota HIMASIF.
+                                                                </template>
+
+                                                                <template v-if="division.id === 3">
+                                                                    1. Melaksanakan program kerja organisasi sesuai porsi yang telah ditetapkan dalam rapat kerja HIMASIF.<br>
+                                                                    2. Mengoordinasikan setiap program kegiatan yang akan dilaksanakan kepada Ketua Umum HIMASIF.<br>
+                                                                    3. Membuat dan melaksanakan konsep kaderisasi organisasi secara tertib dan berkelanjutan dalam satu periode.<br>
+                                                                    4. Mengadakan kegiatan kemahasiswaan bidang non-akademik yang bersifat pembentukan dan pengembangan softskill.<br>
+                                                                    5. Memantau aktivitas dan penjagaan kinerja para pengurus HIMASIF.<br>
+                                                                    6. Menyusun rekomendasi dan pertimbangan kompetensi bagi pendelegasian tugas maupun kepanitiaan.<br>
+                                                                    7. Menjalankan fungsi penyediaan diskusi terkait masalah non-akademik bagi mahasiswa aktif Program Studi Sistem Informasi baik antar individu maupun melalui forum berdasarkan kebutuhan dan kondisi.<br>
+                                                                    8. Membuat laporan pertanggungjawaban selama satu periode menjabat.<br>
+                                                                    9. Memberikan laporan pertanggungjawaban dari setiap kegiatan yang telah dilaksanakan kepada Ketua Umum dan anggota HIMASIF.
+                                                                </template>
+
+                                                                <template v-if="division.id === 4">
+                                                                    1. Melaksanakan program kerja organisasi sesuai porsi yang telah ditetapkan dalam rapat kerja HIMASIF.<br>
+                                                                    2. Mengadakan penelitian untuk mengembangkan sumber daya mahasiswa dalam bidang akademik dan non-akademik yang bersifat inovatif dan mengikuti perkembangan zaman.<br>
+                                                                    3. Menjalankan dan memantau pelaksanaan program kerja kewirausahaan.<br>
+                                                                    4. Membuat studi kasus terhadap masalah yang terjadi di organisasi untuk dilaksanakan konsolidasi, optimalisasi, dan pengembangan demi menciptakan lingkungan organisasi yang konstruktif.<br>
+                                                                    5. Menganalisis problematika organisasi dan melakukan evaluasi program kerja HIMASIF.<br>
+                                                                    6. Mengoordinasikan dan memfasilitasi kegiatan seminar yang diselenggarakan dalam ruang lingkup Program Studi Sistem Informasi, bersama Divisi HUMAS sebagai penyalur informasi.<br>
+                                                                    7. Membuat laporan pertanggungjawaban selama satu periode menjabat.<br>
+                                                                    8. Memberikan laporan pertanggungjawaban dari setiap kegiatan yang telah dilaksanakan kepada Ketua Umum dan anggota HIMASIF.
+                                                                </template>
+
+                                                                <template v-if="division.id === 5">
+                                                                    1. Melaksanakan program kerja organisasi sesuai porsi yang telah ditetapkan dalam rapat kerja HIMASIF.<br>
+                                                                    2. Menjalin dan menjaga hubungan baik dengan instansi, lembaga, dan organisasi lain.<br>
+                                                                    3. Mengelola seluruh informasi, dokumentasi, dan publikasi baik terkait civitas Program Studi Sistem Informasi maupun di luar civitas Program Studi Sistem Informasi sesuai dengan kepentingan HIMASIF.<br>
+                                                                    4. Bekerja sama dengan Divisi LITBANG dalam menerima aspirasi dan inspirasi mahasiswa Program Studi Sistem Informasi terkait kinerja kepengurusan HIMASIF.<br>
+                                                                    5. Bekerja sama dengan Divisi MEDIATEK dalam mengelola informasi di media informasi dan komunikasi HIMASIF.<br>
+                                                                    6. Mencari dan menyediakan informasi yang dibutuhkan HIMASIF.<br>
+                                                                    7. Membuat laporan pertanggungjawaban selama satu periode menjabat.<br>
+                                                                    8. Memberikan laporan pertanggungjawaban dari setiap kegiatan yang telah dilaksanakan kepada Ketua Umum dan anggota HIMASIF.
+                                                                </template>
+
+                                                                <template v-if="division.id === 6">
+                                                                    1. Melaksanakan program kerja organisasi sesuai porsi yang telah ditetapkan dalam rapat kerja HIMASIF.<br>
+                                                                    2. Menjadi pengembang teknologi yang dibutuhkan oleh anggota dan pengurus HIMASIF.<br>
+                                                                    3. Bekerja sama dengan Divisi HUMAS dalam penyediaan media untuk menunjang komunikasi dan informasi bagi anggota dan pengurus HIMASIF.<br>
+                                                                    4. Menjadi penyedia media untuk menunjang publikasi dari produk kewirausahaan organisasi HIMASIF.<br>
+                                                                    5. Menjadi penanggung jawab dalam pengembangan ilmu seputar media informasi dan teknologi.<br>
+                                                                    6. Bertanggung jawab atas media yang dikembangkan oleh HIMASIF.<br>
+                                                                    7. Membuat laporan pertanggungjawaban selama satu periode menjabat.<br>
+                                                                    8. Memberikan laporan pertanggungjawaban dari setiap kegiatan dilaksanakan kepada Ketua Umum dan anggota HIMASIF.
+                                                                </template>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+
+                                                    <!-- CLOSE BUTTON -->
+                                                    <div class="w-full flex justify-center">
+
+                                                        <button
+                                                            type="button"
+                                                            class="bg-bg-primary border border-border-primary dark:bg-bg-primary-dark dark:border-border-primary-dark rounded-full w-12 h-12 mt-7 flex items-center justify-center cursor-pointer"
+                                                            :data-modal-hide="'divisi-modal-' + division.id"
+                                                        >
+
+                                                            <svg width="30px" height="30px" fill="#fff" viewBox="-3.5 0 19 19">
+                                                                <path
+                                                                    d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z"
+                                                                />
+                                                            </svg>
+
+                                                        </button>
+
+                                                    </div>
+
                                                 </div>
+
                                             </div>
 
-                                            <div class="w-full flex justify-center">
-                                                <button type="button"
-                                                    class="bg-bg-primary border border-border-primary dark:bg-bg-primary-dark dark:border-border-primary-dark rounded-full w-12 h-12 mt-7 flex items-center justify-center cursor-pointer"
-                                                    data-modal-hide="divisi-modal">
-                                                    <svg width="30px" height="30px" fill="#fff" viewBox="-3.5 0 19 19"
-                                                        xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
-                                                        <path
-                                                            d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
-                                                    </svg>
-                                                    <span class="sr-only">Close modal</span>
+                                        </template>
 
-                                                </button>
-                                            </div>
-
-                                        </div>
                                     </div>
+
                                 </div>
 
                             </div>
