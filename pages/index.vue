@@ -212,7 +212,7 @@
 
 useHead({
   
-  title: 'HIMASIF - Fortes in Futura !',
+  title: 'HIMASIF - Astra Viva Viva Fortis !',
   
   
   meta: [
