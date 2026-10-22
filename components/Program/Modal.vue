@@ -19,7 +19,7 @@
                             :class="getTextDivisionColor">{{
                                 getDivisionName() }}</span></p>
                     <p class="capitalize text-deskripsi-sm md:text-deskripsi">
-                        {{ programInformation.data[0].implementation }} · {{
+                        {{ programInformation?.data?.[0]?.implementation }} · {{
                             getStatusTitle
                         }}
                     </p>
@@ -31,7 +31,7 @@
                             getDivisionName() }}
                         </span>
                         <span class="capitalize">
-                            · {{ programInformation.data[0].implementation }} · {{
+                            · {{ programInformation?.data?.[0]?.implementation }} · {{
                                 getStatusTitle
                             }}
                         </span>
@@ -133,11 +133,12 @@ const formData = ref({
 // }));
 
 const getStatusTitle = computed(() => {
-    if (programInformation.value.data[0].status === "ongoing") {
+    const status = programInformation.value?.data?.[0]?.status
+    if (status === "ongoing") {
         return "Sedang Berjalan";
-    } else if (programInformation.value.data[0].status === "done") {
+    } else if (status === "done") {
         return "Selesai";
-    } else if (programInformation.value.data[0].status === "coming soon") {
+    } else if (status === "coming soon") {
         return "Segera Datang";
     } else {
         return "Unknown";

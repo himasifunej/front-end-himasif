@@ -33,7 +33,7 @@
         <aside class="space-y-4 hidden lg:block">
           <h3 class="text-title-4">Blog serupa</h3>
 
-          <div v-for="blog in blogs.data.slice(0, 3)" @click="$router.push({ path: `/app/blog/${blog.id}` })"
+          <div v-for="blog in blogList.slice(0, 3)" @click="$router.push({ path: `/app/blog/${blog.id}` })"
             class="cursor-pointer flex space-x-2.5">
 
             <div class="border border-border-primary dark:text-text-secondary-dark rounded-lg">
@@ -87,8 +87,12 @@ const { data: blogCategory } = await useAPI('/blog_category', {
 })
 
 const getBlogCategory = (blogId) => {
-  return blogCategory.value.result.find((el) => el.id === blogId).title
+  const found = (blogCategory.value?.result ?? []).find((el) => el.id === blogId)
+  return found?.title ?? ''
 }
+
+// Null guard: fetch SSR bisa gagal → data null → template crash 500.
+const blogList = computed(() => blogs.value?.data ?? [])
 
 const getPublishedperBlogDay = (dateInput) => {
   const date = new Date(dateInput)
