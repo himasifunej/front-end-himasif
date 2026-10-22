@@ -16,6 +16,12 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   css: ["~/assets/css/main.css"],
 
+  // Halaman baca paste dirender backend Laravel (v2.himasif.id/paste/{hash}).
+  // Proxy supaya address bar tetap di himasif.id/paste/{hash}.
+  routeRules: {
+    "/paste/**": { proxy: "https://v2.himasif.id/paste/**" },
+  },
+
   modules: [
     "@nuxtjs/tailwindcss",
     "@pinia/nuxt",
