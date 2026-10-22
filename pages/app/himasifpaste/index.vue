@@ -9,97 +9,84 @@
             <AppContainer class="lg:flex justify-between">
                 <FeatureTitle class="w-full text-center lg:text-left lg:w-1/3">HIMASIF PASTE!</FeatureTitle>
 
-                <form class="mt-14 w-full lg:w-2/5" v-show="!result.paste.url" @submit.prevent="paste()">
+                <!-- Form buat paste: langsung menghasilkan link pendek (tanpa step shorten terpisah) -->
+                <form class="mt-14 w-full lg:w-2/5" v-show="!result.paste.url" @submit.prevent="createPaste()">
                     <div class="mb-4">
                         <input type="text" id="input" v-model="formData.title"
                             class="bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark text-deskripsi-sm md:text-deskripsi placeholder-text-secondary dark:placeholder-text-secondary-dark rounded-lg focus:border-border-primary focus:ring-0 block w-full px-4 py-2.5"
                             placeholder="Isikan judul paste-mu" required>
                     </div>
 
-                    <textarea id="message" rows="4" v-model="formData.text"
+                    <textarea id="message" rows="8" v-model="formData.text"
                         class="bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark text-deskripsi-sm md:text-deskripsi placeholder-text-secondary dark:placeholder-text-secondary-dark rounded-lg focus:border-border-primary focus:ring-0 block w-full px-4 py-2.5"
                         placeholder="Isikan teks paste-mu" required></textarea>
 
-                    <div class="flex justify-center md:justify-start mt-4">
-                        <AppButtonSecondary type="submit" :disabled="formData.title == '' || formData.text == ''">Paste!
+                    <div class="mt-4">
+                        <div class="flex gap-4 justify-center lg:justify-normal">
+                            <div>
+                                <input type="radio" id="auto" name="link-type" value="auto" class="hidden peer"
+                                    v-model="formData.linkType">
+                                <label for="auto"
+                                    class="inline-flex text-deskripsi-sm md:text-deskripsi items-center justify-center px-4 py-2.5 bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-secondary dark:text-secondary-dark rounded-lg cursor-pointer peer-checked:bg-card-pressed dark:peer-checked:bg-card-pressed-dark peer-checked:text-text-primary dark:peer-checked:text-text-primary-dark">
+                                    Link otomatis
+                                </label>
+                            </div>
+
+                            <div>
+                                <input type="radio" id="custom" name="link-type" value="custom" class="hidden peer"
+                                    v-model="formData.linkType">
+                                <label for="custom"
+                                    class="inline-flex text-deskripsi-sm md:text-deskripsi items-center justify-center px-4 py-2.5 bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-secondary dark:text-secondary-dark rounded-lg cursor-pointer peer-checked:bg-card-pressed dark:peer-checked:bg-card-pressed-dark peer-checked:text-text-primary dark:peer-checked:text-text-primary-dark">
+                                    Link custom
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex w-full mt-4" v-show="formData.linkType == 'custom'">
+                            <span
+                                class="inline-flex items-center px-4 py-2.5 text-deskripsi-sm md:text-deskripsi text-text-primary dark:text-text-primary-dark bg-border-primary dark:bg-border-primary-dark border border-r-0 border-border-primary dark:border-border-primary-dark rounded-l-lg">
+                                himasif.id/
+                            </span>
+                            <input type="text" id="url_key" v-model="formData.url_key"
+                                pattern="[A-Za-z0-9_\-]+" maxlength="40"
+                                :required="formData.linkType == 'custom'"
+                                class="rounded-none rounded-r-lg px-4 py-2.5 text-deskripsi-sm md:text-deskripsi bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark placeholder-text-secondary dark:placeholder-text-secondary-dark focus:border-border-primary focus:ring-0 block flex-1 min-w-0 w-full"
+                                placeholder="Isikan link custom (huruf, angka, - atau _)">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center lg:justify-normal mt-4">
+                        <AppButtonSecondary type="submit"
+                            :disabled="formData.title == '' || formData.text == '' || submitting">
+                            {{ submitting ? 'Menyimpan…' : 'Paste!' }}
                         </AppButtonSecondary>
                     </div>
                 </form>
 
-                <form class="mt-14 w-full lg:w-2/5" v-show="result.paste.url && !result.shortedLink"
-                    @submit.prevent="createShorten()">
-                    <div class="mb-4">
-                        <input type="text" id="paste" v-model="result.paste.url" readonly
-                            class="bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark text-deskripsi-sm md:text-deskripsi placeholder-text-secondary dark:placeholder-text-secondary-dark rounded-lg focus:border-border-primary focus:ring-0 block w-full px-4 py-2.5"
-                            placeholder="Link paste" required>
-                    </div>
-
-                    <div class="mb-4">
-                        <div class="gap-4">
-                            <div class="flex gap-4 justify-center lg:justify-normal">
-                                <div>
-                                    <input type="radio" id="auto" name="short-type" value="auto" class="hidden peer"
-                                        required v-model="formData.shortTypePicked" checked>
-                                    <label for="auto"
-                                        class="inline-flex text-deskripsi-sm md:text-deskripsi items-center justify-center px-4 py-2.5 bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-secondary dark:text-secondary-dark rounded-lg cursor-pointer peer-checked:bg-card-pressed dark:peer-checked:bg-card-pressed-dark peer-checked:text-text-primary dark:peer-checked:text-text-primary-dark">
-                                        Auto
-                                    </label>
-                                </div>
-
-                                <div>
-                                    <input type="radio" id="custom" name="short-type" value="custom" class="hidden peer"
-                                        v-model="formData.shortTypePicked">
-                                    <label for="custom"
-                                        class="inline-flex text-deskripsi-sm md:text-deskripsi items-center justify-center px-4 py-2.5 bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-secondary dark:text-secondary-dark rounded-lg cursor-pointer peer-checked:bg-card-pressed dark:peer-checked:bg-card-pressed-dark peer-checked:text-text-primary dark:peer-checked:text-text-primary-dark">
-                                        Custom
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="flex w-full mt-4" v-show="formData.shortTypePicked == 'custom'">
-                                <span
-                                    class="inline-flex items-center px-4 py-2.5 text-deskripsi-sm md:text-deskripsi text-text-primary dark:text-text-primary-dark bg-border-primary dark:bg-border-primary-dark border border-r-0 border-border-primary dark:border-border-primary-dark rounded-l-lg">
-                                    himasif.id/
-                                </span>
-                                <input type="text" id="website-admin" v-model="formData.url_key"
-                                    :disabled="formData.shortTypePicked == 'auto'"
-                                    class="rounded-none rounded-r-lg px-4 py-2.5 text-deskripsi-sm md:text-deskripsi bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark placeholder-text-secondary dark:placeholder-text-secondary-dark focus:border-border-primary focus:ring-0 block flex-1 min-w-0 w-full disabled:cursor-not-allowed"
-                                    placeholder="Isikan shorten link custom">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-center lg:justify-normal">
-                        <AppButtonSecondary type="submit" :disabled="result.paste.url == ''">
-                            Shorten</AppButtonSecondary>
-                    </div>
-                </form>
-
-
-                <div class="mt-14 w-full lg:w-2/5" v-show="result.shortedLink">
+                <!-- Hasil: link pendek siap dibagikan -->
+                <div class="mt-14 w-full lg:w-2/5" v-show="result.paste.url">
                     <div class="relative mb-4">
-                        <input type="text" id="generatedLink"
+                        <input type="text" id="generatedLink" :value="result.paste.url"
                             class="bg-card-primary dark:bg-card-primary-dark border border-border-primary dark:border-border-primary-dark text-text-primary dark:text-text-primary-dark text-deskripsi-sm md:text-deskripsi placeholder-text-secondary dark:placeholder-text-secondary-dark rounded-lg focus:border-border-primary dark:focus:border-border-primary-dark focus:ring-0 block w-full px-4 py-2.5"
-                            readonly required v-model="result.shortedLink">
+                            readonly required>
 
-                        <div
-                            class="absolute inset-y-0 right-0 flex items-center pr-6">
-                            <img data-tooltip-target="tooltip-copy" src="/icon/Iconly/Light/paste.svg" class="w-4 h-4 cursor-pointer" alt="copy link"
-                                @click="copyToClipboard()">
-                           
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-6">
+                            <img data-tooltip-target="tooltip-copy" src="/icon/Iconly/Light/paste.svg"
+                                class="w-4 h-4 cursor-pointer" alt="copy link" @click="copyToClipboard()">
                         </div>
 
                         <div id="tooltip-copy" role="tooltip"
-                                class="hidden md:block absolute z-20 invisible px-2.5 py-2 text-deskripsi text-text-primary dark:text-text-primary-dark bg-card-primary dark:bg-card-primary-dark rounded-lg opacity-0 tooltip border border-border-primary dark:border-border-primary-dark">
-                                Salin
-                            </div>
-
-
-
+                            class="hidden md:block absolute z-20 invisible px-2.5 py-2 text-deskripsi text-text-primary dark:text-text-primary-dark bg-card-primary dark:bg-card-primary-dark rounded-lg opacity-0 tooltip border border-border-primary dark:border-border-primary-dark">
+                            Salin
+                        </div>
                     </div>
 
+                    <p class="text-deskripsi-sm md:text-deskripsi text-secondary dark:text-secondary-dark mb-4">
+                        Link ini langsung menuju paste-mu. Bagikan ke siapa pun yang kamu mau.
+                    </p>
+
                     <div class="flex justify-center space-x-4 lg:justify-normal">
-                        <AppButtonSecondary @click="generateQr(result.shortedLink)">Generate QR Code
+                        <AppButtonSecondary @click="generateQr(result.paste.url)">Generate QR Code
                         </AppButtonSecondary>
                         <AppButtonSecondary @click="resetForm">Paste Another</AppButtonSecondary>
                     </div>
@@ -126,90 +113,75 @@ useHead({
 })
 
 const qr = ref('')
+const submitting = ref(false)
 
 const baseFormData = {
     title: '',
     text: '',
-    shortTypePicked: 'auto',
+    linkType: 'auto',
     url_key: ''
 }
 
-const formData = ref({
-    title: '',
-    text: '',
-    shortTypePicked: 'auto',
-    url_key: ''
-})
+const formData = ref({ ...baseFormData })
 
 const result = ref({
-    paste: '',
-    shortedLink: ''
+    paste: ''
 })
 
-const paste = async () => {
-    const { data: data, error } = await useAPI('paste', {
-        method: 'POST',
-        query: {
-            title: formData.value.title,
-            text: formData.value.text
+const createPaste = async () => {
+    if (submitting.value) return
+    submitting.value = true
+
+    const query = {
+        title: formData.value.title,
+        text: formData.value.text
+    }
+
+    if (formData.value.linkType === 'custom' && formData.value.url_key) {
+        query.custom_ending = formData.value.url_key
+    }
+
+    try {
+        const { data: data, error } = await useAPI('paste', {
+            method: 'POST',
+            query
+        })
+
+        if (error.value) {
+            useAlertsStore().openModal({
+                component: AppAlertError,
+                props: {
+                    text: error.value?.data?.message || 'Gagal membuat paste. Coba lagi.'
+                }
+            })
+            return
         }
-    })
 
-    if (data.value.code === 200) {
-        useAlertsStore().openModal({
-            component: AppAlertSuccess,
-            props: {
-                text: data.value.message
-            }
-        })
-        result.value.paste = data.value.result
-    }
+        if (data.value?.code === 200 && data.value?.result?.url) {
+            result.value.paste = data.value.result
+            useAlertsStore().openModal({
+                component: AppAlertSuccess,
+                props: {
+                    text: data.value.message
+                }
+            })
+            return
+        }
 
-    if (error.value) {
-        useAlertsStore().openModal({
-            component: AppAlertError,
-            props: {
-                text: error.value.message
-            }
-        })
-    }
-}
-
-
-const createShorten = async function () {
-    const bodyData = createFormData({
-        destination_url: result.value.paste.url,
-        url_key: formData.value.url_key
-    })
-
-    const { data: data, error } = await useAPI('shorten', {
-        method: 'POST',
-        body: bodyData
-    })
-
-    if (data.value.code === 200) {
-        result.value.shortedLink = data.value.result.short_link
-        useAlertsStore().openModal({
-            component: AppAlertSuccess,
-            props: {
-                text: data.value.message
-            }
-        })
-    }
-
-    if (error.value) {
         useAlertsStore().openModal({
             component: AppAlertError,
             props: {
-                text: error.value
+                text: data.value?.message || 'Gagal membuat paste. Coba lagi.'
             }
         })
+    } finally {
+        submitting.value = false
     }
 }
 
 const copyToClipboard = async () => {
     try {
-        await navigator.clipboard.writeText(generatedLink.value)
+        await navigator.clipboard.writeText(result.value.paste.url)
         useAlertsStore().openModal({
             component: AppAlertSuccess,
             props: {
@@ -220,7 +192,7 @@ const copyToClipboard = async () => {
         useAlertsStore().openModal({
             component: AppAlertError,
             props: {
-                text: error
+                text: 'Gagal menyalin, salin manual dari kolom link.'
             }
         })
     }
@@ -232,9 +204,8 @@ const generateQr = async (link) => {
 }
 
 const resetForm = () => {
-    formData.value = baseFormData
-    result.value.paste = '',
-        result.value.shortedLink = ''
+    formData.value = { ...baseFormData }
+    result.value.paste = ''
     qr.value = ''
 }
 
