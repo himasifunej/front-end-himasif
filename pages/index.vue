@@ -10,7 +10,7 @@
 
                 <video playsinline autoplay loop poster="" :muted="!bannerSound"
                     class="object-cover absolute top-0 left-0 h-screen w-screen" ref="bannerVideo">
-                    <source :src="banner.data[0].video[0].url" type="video/mp4">
+                    <source v-if="bannerMain?.video?.[0]?.url" :src="bannerMain.video[0].url" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
 
@@ -27,15 +27,15 @@
                     {{ bannerSound ? 'Mute Video' : 'Unmute Video' }}
                 </div>
 
-                <NuxtImg :src="banner.data[0].image_behind[0].url" sizes="1000"
+                <NuxtImg v-if="bannerMain?.image_behind?.[0]?.url" :src="bannerMain.image_behind[0].url" sizes="1000"
                     class="absolute top-0 left-0 transition ease-in duration-300 w-full object-cover h-full"
                     :class="isPlayVideo ? 'opacity-0' : 'opacity-100'" alt="" />
 
-                <AppContainer class="relative z-10 pb-5 text-white dark:text-white">
-                    <NuxtImg :src="banner.data[0].image_front[0].url" width="700" class="mx-auto" alt="" />
+                <AppContainer v-if="bannerMain" class="relative z-10 pb-5 text-white dark:text-white">
+                    <NuxtImg :src="bannerMain.image_front[0].url" width="700" class="mx-auto" alt="" />
 
                     <div class="flex justify-center gap-4 relative mb-4">
-                        <template v-for="ctas in banner.data[0].ctas">
+                        <template v-for="ctas in (bannerMain.ctas ?? [])">
                             <nuxt-link :to="ctas.url">
 
                                 <AppButtonBanner>
@@ -51,7 +51,7 @@
                     <p
                         class="hidden lg:block text-text-secondary dark:text-text-secondary-dark text-deskripsi-sm md:text-deskripsi">
                         {{
-                            banner.data[0].description }}</p>
+                            bannerMain.description }}</p>
                 </AppContainer>
 
             </div>
@@ -64,7 +64,7 @@
                 <h3 class="text-title-2 text-center hidden md:block dark:text-title-2-dark">Program Kerja</h3>
 
                 <div class="grid grid-cols-3 md:grid-cols-6 gap-2.5">
-                    <div v-for="program in eventPrograms.data.slice(0, 6)" @mouseenter="playVideo"
+                    <div v-for="program in programList.slice(0, 6)" @mouseenter="playVideo"
                         @mouseleave="stopVideo" @click="selectProgram(program.id)"
                         class="bg-card-primary border border-border-primary relative rounded-lg p-4  aspect-[3/2] flex items-center justify-center group/program cursor-pointer dark:bg-card-primary-dark dark:border-border-primary-dark">
                         <video playsinline muted loop
@@ -76,7 +76,7 @@
                         <div
                             class="absolute w-full h-full top-0 left-0 bg-card-primary dark:bg-card-primary-dark group-hover/program:bg-black group-hover/program:bg-opacity-0 transition ease-in-out duration-500 rounded-lg">
                         </div>
-                        <NuxtImg :src="program.logo[0].url" sizes="100"
+                        <NuxtImg v-if="program.logo?.[0]?.url" :src="program.logo[0].url" sizes="100"
                             class="w-full max-w-[140px] max-h-20 object-contain z-10 aspect-[3/2]" />
                     </div>
                 </div>
@@ -128,21 +128,21 @@
                 <h3 class="text-title-2 text-center">Blog</h3>
 
                 <div class="hidden lg:grid grid-cols-4 gap-5">
-                    <CardBlog v-for="blog in blogs.data.slice(0, 4)" :key="blog.id" :data="blog"
+                    <CardBlog v-for="blog in blogList.slice(0, 4)" :key="blog.id" :data="blog"
                         :category="getBlogCategory(blog.blog_category_id)"
                         @click="$router.push({ path: `/app/blog/${blog.id}` })" />
                 </div>
 
                 <!-- For medium (md) screens: display 3 blogs -->
                 <div class="hidden md:grid lg:hidden grid-cols-3 gap-5">
-                    <CardBlog v-for="blog in blogs.data.slice(0, 3)" :key="blog.id" :data="blog"
+                    <CardBlog v-for="blog in blogList.slice(0, 3)" :key="blog.id" :data="blog"
                         :category="getBlogCategory(blog.blog_category_id)"
                         @click="$router.push({ path: `/app/blog/${blog.id}` })" />
                 </div>
 
                 <!-- For small (sm) screens: display 2 blogs -->
                 <div class="grid grid-cols-2 gap-5 md:hidden">
-                    <CardBlog v-for="blog in blogs.data.slice(0, 2)" :key="blog.id" :data="blog"
+                    <CardBlog v-for="blog in blogList.slice(0, 2)" :key="blog.id" :data="blog"
                         :category="getBlogCategory(blog.blog_category_id)"
                         @click="$router.push({ path: `/app/blog/${blog.id}` })" />
                 </div>
@@ -292,10 +292,19 @@ const { data: blogCategory } = await useAPI('/blog_category', {
     pick: ['result']
 })
 
+// --- Null guards -------------------------------------------------------
+// Kalau salah satu fetch SSR gagal (network blip dari edge Vercel ke API),
+// useFetch mengembalikan data = null. Tanpa guard, template membaca
+// `null.data[0]` → "Cannot read properties of null (reading 'data')" → 500.
+const bannerMain = computed(() => banner.value?.data?.[0] ?? null)
+const programList = computed(() => eventPrograms.value?.data ?? [])
+const blogList = computed(() => blogs.value?.data ?? [])
 
 const getBlogCategory = (blogId) => {
-    return blogCategory.value.result.find((el) => el.id === blogId).title
+    const found = (blogCategory.value?.result ?? []).find((el) => el.id === blogId)
+    return found?.title ?? ''
 }
+
 
 
 const selectProgram = async function (id) {
