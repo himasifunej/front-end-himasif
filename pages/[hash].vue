@@ -8,15 +8,23 @@ definePageMeta({
   layout: false,
 })
 
-const route = useRoute();
+const route = useRoute()
+const key = String(route.params.hash || '')
 
-// Link pendek (himasif.id/{key}) → resolve di backend (v2.himasif.id), server-side 301.
-// Catatan: himasif.id/{key} dulu diarahkan ke www.api.himasif.id (host lama) yang
-// membuat redirect bergantung pada JS + host terpisah.
-await navigateTo(`https://v2.himasif.id/${route.params.hash}`, {
-  external: true,
-  redirectCode: 301,
-})
+/**
+ * Link pendek: himasif.id/{key}
+ * - key valid    -> 301 permanen ke tujuan (server-side, tanpa JS)
+ * - key tidak ada -> 302 ke homepage (bukan 301, biar tidak ter-cache permanen)
+ */
+const { data } = await useAPI(`/shorten/${encodeURIComponent(key)}`)
+
+const destination = data.value?.code === 200 ? data.value?.result?.destination_url : null
+
+if (destination) {
+  await navigateTo(destination, { external: true, redirectCode: 301 })
+} else {
+  await navigateTo('/', { redirectCode: 302 })
+}
 </script>
 
 <style></style>
