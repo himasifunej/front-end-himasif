@@ -162,24 +162,37 @@
           </section>
 
           <!-- DIUMUMKAN -->
-          <section v-if="phase === 'announced' && winner">
-            <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-[#FF6D00]/40 p-6 md:p-10 text-center space-y-5">
-              <p class="text-xs md:text-sm uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Ketua Umum terpilih</p>
-              <img
-                :src="candidatePhoto(winner)"
-                :alt="winner.name"
-                class="mx-auto w-48 h-60 md:w-64 md:h-80 object-cover rounded-2xl border border-white/10 shadow-2xl"
-                @error="onImageError"
-              />
-              <div>
-                <h2 class="text-2xl md:text-4xl font-bold uppercase">{{ winner.name }}</h2>
-                <p v-if="winner.year_of_study" class="mt-1 text-white/70">
-                  Sistem Informasi {{ winner.year_of_study }}
+          <section v-if="revealWinner">
+            <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-[#FF6D00]/40 px-6 py-10 md:p-14 text-center flex flex-col items-center gap-5">
+              <span v-if="previewMode" class="px-3 py-1 rounded-full border border-white/30 text-xs text-white/80">
+                Pratinjau staging · {{ previewSource }}
+              </span>
+              <p class="text-xs md:text-sm uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Hasil pemilihan</p>
+              <h2 class="text-2xl md:text-4xl font-bold leading-tight max-w-xl">
+                Ketua Umum HIMASIF {{ revealPeriod }} sudah diumumkan
+              </h2>
+              <p class="text-sm text-white/70 max-w-md">Nyalakan suara, lalu buka pengumumannya.</p>
+              <LazyVoteReveal class="mt-2" :winner="revealWinner" :period="revealPeriod" />
+              <button type="button" class="text-sm text-white/60 underline underline-offset-4" @click="showStatic = !showStatic">
+                {{ showStatic ? "Sembunyikan" : "Lihat tanpa animasi" }}
+              </button>
+
+              <div v-if="showStatic" class="w-full pt-6 border-t border-white/10 space-y-4">
+                <img
+                  :src="candidatePhoto(revealWinner)"
+                  :alt="revealWinner.name"
+                  class="mx-auto w-48 h-60 md:w-64 md:h-80 object-cover rounded-2xl border border-white/10 shadow-2xl"
+                  @error="onImageError"
+                />
+                <div>
+                  <p class="text-xs uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Ketua Umum HIMASIF {{ revealPeriod }}</p>
+                  <h3 class="mt-1 text-2xl md:text-4xl font-bold uppercase">{{ revealWinner.name }}</h3>
+                  <p v-if="revealWinner.year_of_study" class="mt-1 text-white/70">Sistem Informasi {{ revealWinner.year_of_study }}</p>
+                </div>
+                <p class="text-sm text-white/70 max-w-md mx-auto">
+                  Selamat! Terima kasih untuk semua calon dan Sisforians yang sudah memilih.
                 </p>
               </div>
-              <p class="text-sm text-white/70 max-w-md mx-auto">
-                Selamat! Terima kasih untuk semua calon dan Sisforians yang sudah memilih.
-              </p>
             </div>
           </section>
 
@@ -364,6 +377,33 @@ const winner = computed(() => election.value?.result?.winner ?? null);
 const candidateList = computed(() => election.value?.candidates ?? []);
 
 const title = computed(() => election.value?.name || "Pemilihan Ketua Umum HIMASIF");
+
+// Pengumuman beranimasi (fase DIUMUMKAN) + pratinjau khusus non-production:
+// /app/vote?preview-reveal=1[&election=ID] → data hasil pemilihan ID (yang sudah diumumkan) atau data dummy.
+const route = useRoute();
+const requestHost = useRequestURL().hostname;
+const previewMode = computed(
+  () =>
+    !!useRuntimeConfig().public.revealPreview &&
+    route.query["preview-reveal"] !== undefined &&
+    !/^(www\.)?himasif\.id$/i.test(requestHost),
+);
+const previewResult = ref(null);
+const DUMMY_WINNER = { name: "Dummy A", photo_url: null, year_of_study: 2024 };
+const previewSource = computed(() =>
+  phase.value === "announced" && winner.value
+    ? `pemilihan #${election.value.id}`
+    : previewResult.value
+      ? `hasil pemilihan #${route.query.election}`
+      : "data dummy",
+);
+const revealWinner = computed(() => {
+  if (phase.value === "announced" && winner.value) return winner.value;
+  if (!previewMode.value) return null;
+  return previewResult.value?.winner ?? DUMMY_WINNER;
+});
+const revealPeriod = computed(() => electionPeriod(previewResult.value ? { ...election.value, result: previewResult.value } : election.value) || "2026–2027");
+const showStatic = ref(false);
 const instagramUrl = computed(() => {
   const s = settings.value?.instagram;
   return typeof s === "string" && /^https?:\/\//.test(s) ? s : HIMASIF_INSTAGRAM;
@@ -455,6 +495,13 @@ let timer;
 let lastRefresh = 0;
 onMounted(async () => {
   window.addEventListener("keydown", onKey);
+  const pid = Number(route.query.election);
+  if (previewMode.value && pid > 0) {
+    useNuxtApp()
+      .$api(VOTING_API.result(pid))
+      .then((r) => (previewResult.value = r?.data?.winner ? r.data : null))
+      .catch(() => {});
+  }
   await refreshElection(); // server_time segar untuk offset jam di browser
   await loadVoter();
   timer = setInterval(async () => {
