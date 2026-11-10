@@ -2,10 +2,13 @@ import { defineStore } from "pinia";
 import { AppAlertError, AppAlertSuccess, AppAlertConfirm } from "#components";
 
 interface UserPayloadInterface {
+  /** NIM atau email UNEJ */
   email: string;
   password: string;
-  remember_me: string;
+  remember_me?: string | number;
 }
+
+const SESSION_COOKIES = ["token", "username", "is-vote"] as const;
 
 export const useAuthStore = defineStore({
   id: "auth",
@@ -14,77 +17,74 @@ export const useAuthStore = defineStore({
     loading: false,
   }),
   actions: {
-
-    async authenticateUser({
-      email,
-      password,
-      remember_me,
-    }: UserPayloadInterface) {
-      const formData = createFormData({ email, password, remember_me });
-      const {
-        data: userData,
-        pending,
-        error,
-      }: any = await useAPI("/login", {
-        method: "POST",
-        body: formData,
-      });
-      this.loading = pending;
-
-      if (error.value) {
-        this.authenticated = false;
-        useAlertsStore().openModal({
-          component: AppAlertError,
-          props: {
-            text: "Login gagal",
-          },
-        });
-      }
-
-      const token = useCookie("token");
-      const username = useCookie("username");
-      const isVote = useCookie("is-vote");
-
-      token.value = userData.value.token;
-      username.value = userData.value.data.username;
-      isVote.value = userData.value.data.vote_status == 0 ? 'false' : 'true';
-      
-      useAlertsStore().openModal({
-        component: AppAlertSuccess,
-        props: {
-          text: userData.value.info,
-        },
-      });
+    /** Simpan sesi pemilih (login NIM+password dan magic link). Kontrak v2: { token, expires_at, voter }. */
+    setSession(token: string, voter: Partial<Voter> | null = null, expiresAt?: string | null) {
+      const exp = parseWib(expiresAt);
+      const maxAge = exp
+        ? Math.max(60, Math.floor((exp.getTime() - Date.now()) / 1000))
+        : 60 * 60 * 12;
+      const opts = { maxAge, sameSite: "lax" as const, secure: !import.meta.dev };
+      useCookie("token", opts).value = token;
+      useCookie("username", opts).value = voter?.name || "Pemilih";
+      useCookie("is-vote", opts).value = voter?.election?.has_voted ? "true" : "false";
       this.authenticated = true;
     },
 
+    clearSession() {
+      for (const c of SESSION_COOKIES) useCookie(c).value = null;
+      this.authenticated = false;
+    },
+
+    async authenticateUser({ email, password }: UserPayloadInterface) {
+      this.loading = true;
+      try {
+        const res: any = await useNuxtApp().$api(VOTING_API.login, {
+          method: "POST",
+          body: loginBody(email, password),
+        });
+        const d = res?.data ?? {};
+        if (!d.token) throw { data: res };
+        this.setSession(d.token, d.voter, d.expires_at);
+        useAlertsStore().openModal({
+          component: AppAlertSuccess,
+          props: { text: `Halo, ${d.voter?.name || "Sisforian"}! Kamu sudah masuk.` },
+        });
+        return true;
+      } catch (e) {
+        this.authenticated = false;
+        useAlertsStore().openModal({
+          component: AppAlertError,
+          props: { text: apiError(e).message || "Login gagal" },
+        });
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
 
     async logUserOut() {
-      await useAlertsStore()
-        .openModal({
+      // openModal(Confirm) me-reject saat dibatalkan.
+      try {
+        await useAlertsStore().openModal({
           component: markRaw(AppAlertConfirm),
-          props: {
-            text: "Apakah kamu yakin ingin logout??",
-          },
-        })
-        .then(async () => {
-          const token = useCookie("token");
-          const username = useCookie("username");
-          const isVote = useCookie("is-vote");
-          this.authenticated = false;
-          token.value = null;
-          username.value = null;
-          isVote.value = null;
-
-          useAlertsStore().openModal({
-            component: AppAlertSuccess,
-            props: {
-              text: "Kamu telah berhasil logout",
-            },
-          });
-          // await remove()
-          useRouter().push({path: '/'})
+          props: { text: "Yakin ingin keluar?" },
         });
+      } catch {
+        return;
+      }
+
+      // Cabut token di BE (abaikan galat: sesi lokal tetap dihapus).
+      const headers = voterAuthHeader();
+      if (headers.Authorization) {
+        useNuxtApp().$api(VOTING_API.logout, { method: "POST", headers }).catch(() => {});
+      }
+      this.clearSession();
+
+      useAlertsStore().openModal({
+        component: AppAlertSuccess,
+        props: { text: "Kamu sudah keluar" },
+      });
+      useRouter().push({ path: "/" });
     },
   },
 });
