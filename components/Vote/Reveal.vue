@@ -573,6 +573,7 @@ defineExpose({ start });
   display: flex;
   gap: 8px;
   z-index: 2;
+  opacity: var(--veil, 0);
 }
 .rv-ctl button {
   display: inline-flex;
