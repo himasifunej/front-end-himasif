@@ -16,11 +16,21 @@
             <p class="mt-1 text-sm md:text-base text-white/70">
               Himpunan Mahasiswa Sistem Informasi · Universitas Jember
             </p>
+            <span v-if="election?.round >= 2" class="inline-block mt-3 px-3 py-1 rounded-full bg-[#FF6D00] text-black text-xs font-bold">
+              PUTARAN {{ election.round }}
+            </span>
           </header>
+
+          <!-- BELUM ADA / GAGAL MEMUAT -->
+          <section v-if="phase === 'none' || loadError" class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-6 md:p-10 text-center space-y-4">
+            <h2 class="text-xl md:text-2xl font-bold">{{ loadError ? "Data pemilihan gagal dimuat" : "Belum ada pemilihan" }}</h2>
+            <p class="text-sm text-white/70">Pantau info terbaru di Instagram <a :href="instagramUrl" target="_blank" rel="noopener" class="underline">@himasif</a>.</p>
+            <button v-if="loadError" type="button" class="px-4 py-2 rounded-lg border border-white/30" @click="refreshElection()">Coba lagi</button>
+          </section>
 
           <!-- BUKTI MEMILIH -->
           <section
-            v-if="hasVoted && (state.phase === 'open' || state.phase === 'closed')"
+            v-if="receipt && (phase === 'open' || phase === 'closed')"
             class="rounded-2xl border border-[#3BC541]/60 bg-[#00BF08]/15 backdrop-blur-md p-5 md:p-6 flex gap-4 items-start"
             aria-live="polite"
           >
@@ -31,8 +41,12 @@
             </div>
             <div class="space-y-1">
               <h2 class="text-lg md:text-xl font-bold">Suaramu sudah tercatat</h2>
-              <p v-if="votedAt" class="text-sm md:text-base text-white/80">
-                {{ formatWib(votedAt) }}
+              <p class="text-sm md:text-base text-white/80">
+                {{ formatWib(parseWib(receipt.recorded_at)) }}
+              </p>
+              <p class="text-sm">
+                Kode bukti:
+                <span class="font-mono font-bold tracking-wider select-all">{{ receipt.receipt_code }}</span>
               </p>
               <p class="text-xs md:text-sm text-white/60">
                 Pilihanmu bersifat rahasia dan tidak ditampilkan di sini. Terima kasih sudah ikut memilih.
@@ -41,18 +55,18 @@
           </section>
 
           <!-- BELUM DIBUKA -->
-          <section v-if="state.phase === 'upcoming'" class="space-y-5">
+          <section v-if="phase === 'upcoming'" class="space-y-5">
             <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-5 md:p-8 text-center space-y-5">
               <h2 class="text-lg md:text-2xl font-bold">Voting belum dibuka</h2>
-              <VoteTimer :target="state.startAt" label="Dibuka dalam" />
+              <VoteTimer :target="startAt" :offset="offset" label="Dibuka dalam" />
               <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
                 <div class="rounded-xl bg-white/5 p-4">
                   <dt class="text-xs uppercase tracking-wider text-white/60">Dibuka</dt>
-                  <dd class="mt-1 text-sm md:text-base font-semibold">{{ formatWib(state.startAt) }}</dd>
+                  <dd class="mt-1 text-sm md:text-base font-semibold">{{ formatWib(startAt) }}</dd>
                 </div>
                 <div class="rounded-xl bg-white/5 p-4">
                   <dt class="text-xs uppercase tracking-wider text-white/60">Ditutup</dt>
-                  <dd class="mt-1 text-sm md:text-base font-semibold">{{ formatWib(state.endAt) }}</dd>
+                  <dd class="mt-1 text-sm md:text-base font-semibold">{{ formatWib(endAt) }}</dd>
                 </div>
               </dl>
               <p class="text-xs md:text-sm text-white/60">
@@ -62,13 +76,21 @@
           </section>
 
           <!-- DIBUKA: info sesi -->
-          <section v-if="state.phase === 'open'" class="space-y-4">
+          <section v-if="phase === 'open'" class="space-y-4">
             <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
               <div>
                 <p class="text-xs uppercase tracking-wider text-[#FF6D00] font-semibold">Voting dibuka</p>
-                <p class="text-sm md:text-base">Ditutup {{ formatWib(state.endAt) }}</p>
+                <p class="text-sm md:text-base">Ditutup {{ formatWib(endAt) }}</p>
               </div>
-              <VoteTimer :target="state.endAt" label="Sisa waktu" compact />
+              <VoteTimer :target="endAt" :offset="offset" label="Sisa waktu" compact />
+            </div>
+
+            <div
+              v-if="authenticated && reasonText"
+              class="rounded-2xl border border-white/20 bg-white/5 p-4 md:p-5 text-sm md:text-base"
+              role="status"
+            >
+              {{ reasonText }}
             </div>
 
             <div
@@ -87,7 +109,7 @@
           </section>
 
           <!-- DITUTUP -->
-          <section v-if="state.phase === 'closed'">
+          <section v-if="phase === 'closed'">
             <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-6 md:p-10 text-center space-y-4">
               <h2 class="text-2xl md:text-3xl font-bold">Voting ditutup</h2>
               <p class="text-sm md:text-base text-white/80 max-w-md mx-auto">
@@ -111,19 +133,19 @@
           </section>
 
           <!-- DIUMUMKAN -->
-          <section v-if="state.phase === 'announced' && state.winner">
+          <section v-if="phase === 'announced' && winner">
             <div class="rounded-2xl bg-black/60 backdrop-blur-md border border-[#FF6D00]/40 p-6 md:p-10 text-center space-y-5">
               <p class="text-xs md:text-sm uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Ketua Umum terpilih</p>
               <img
-                :src="candidateImage(state.winner)"
-                :alt="state.winner.name"
+                :src="candidatePhoto(winner)"
+                :alt="winner.name"
                 class="mx-auto w-48 h-60 md:w-64 md:h-80 object-cover rounded-2xl border border-white/10 shadow-2xl"
                 @error="onImageError"
               />
               <div>
-                <h2 class="text-2xl md:text-4xl font-bold uppercase">{{ state.winner.name }}</h2>
-                <p v-if="state.winner.year_of_study" class="mt-1 text-white/70">
-                  Sistem Informasi {{ state.winner.year_of_study }}
+                <h2 class="text-2xl md:text-4xl font-bold uppercase">{{ winner.name }}</h2>
+                <p v-if="winner.year_of_study" class="mt-1 text-white/70">
+                  Sistem Informasi {{ winner.year_of_study }}
                 </p>
               </div>
               <p class="text-sm text-white/70 max-w-md mx-auto">
@@ -153,7 +175,7 @@
                 >
                   <div class="relative w-32 sm:w-full shrink-0">
                     <img
-                      :src="candidateImage(c)"
+                      :src="candidatePhoto(c)"
                       :alt="c.name"
                       loading="lazy"
                       class="w-full h-full min-h-[160px] sm:h-72 object-cover"
@@ -225,7 +247,7 @@
       >
         <div class="bg-primary-950 text-white w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-5 md:p-8">
           <div class="flex items-start gap-4">
-            <img :src="candidateImage(detail)" :alt="detail.name" class="w-20 h-24 object-cover rounded-xl shrink-0" @error="onImageError" />
+            <img :src="candidatePhoto(detail)" :alt="detail.name" class="w-20 h-24 object-cover rounded-xl shrink-0" @error="onImageError" />
             <div class="flex-1 min-w-0">
               <p class="text-xs text-secondary">CALON KETUA UMUM {{ detail.order ? `NO. ${detail.order}` : "" }}</p>
               <h3 class="text-lg md:text-xl font-bold uppercase break-words">{{ detail.name }}</h3>
@@ -251,36 +273,81 @@
 <script setup>
 import { AppAlertConfirm, AppAlertSuccess, AppAlertError } from "#components";
 
-definePageMeta({ middleware: ["validate-vote-start"] });
 useHead({ title: "Vote" });
 
 const alertStore = useAlertsStore();
-const { authenticated } = storeToRefs(useAuthStore());
-const { hasVoted, votedAt, record, markVoted } = useVoteReceipt();
+const authStore = useAuthStore();
+const { authenticated } = storeToRefs(authStore);
 const { settings } = storeToRefs(useMySettingsStore());
 
-const { data: voteSetting, refresh: refreshSetting } = await useAPI(VOTING_ENDPOINTS.setting, { key: "vote-setting" });
-const { data: candidates } = await useAPI(VOTING_ENDPOINTS.candidates, {
-  query: { sort: "order" },
-  pick: ["data"],
+// 1) Pemilihan berjalan (publik). 404 no_election → "Belum ada pemilihan".
+const { data: currentRes, error: currentErr, refresh: refreshElection } = await useAPI(VOTING_API.current, {
+  key: "election-current",
 });
+const election = computed(() => currentRes.value?.data ?? null);
+const notFound = computed(() => !!currentErr.value && apiError(currentErr.value).status === 404);
+const loadError = computed(() => !!currentErr.value && !notFound.value);
+const phase = computed(() => (election.value ? election.value.phase : notFound.value ? "none" : "loading"));
+const startAt = computed(() => parseWib(election.value?.start_at));
+const endAt = computed(() => parseWib(election.value?.end_at));
+const winner = computed(() => election.value?.result?.winner ?? null);
+const candidateList = computed(() => election.value?.candidates ?? []);
 
-// Jam sekarang (diperbarui tiap detik di browser) → fase ikut berganti tanpa reload.
-const now = ref(new Date());
-const state = computed(() => normalizeVoteSetting(voteSetting.value, now.value));
-
-const title = computed(() => {
-  const r = voteSetting.value?.result ?? {};
-  return r.title || r.name || "Pemilihan Ketua Umum HIMASIF";
-});
+const title = computed(() => election.value?.name || "Pemilihan Ketua Umum HIMASIF");
 const instagramUrl = computed(() => {
   const s = settings.value?.instagram;
   return typeof s === "string" && /^https?:\/\//.test(s) ? s : HIMASIF_INSTAGRAM;
 });
 
-const candidateList = computed(() => candidates.value?.data || []);
-const showCandidates = computed(() => ["upcoming", "open"].includes(state.value.phase) && candidateList.value.length > 0);
-const canVote = computed(() => state.value.phase === "open" && authenticated.value && !hasVoted.value);
+// Jam server: hitung mundur memakai server_time, bukan jam HP.
+const offset = ref(0);
+watch(
+  () => election.value?.server_time,
+  (t) => {
+    if (import.meta.client && t) offset.value = clockOffset(t);
+  },
+  { immediate: true },
+);
+
+// 2) Pemilih yang sedang masuk.
+const voter = ref(null);
+const receipt = ref(null);
+
+async function loadReceipt() {
+  if (!election.value) return;
+  try {
+    const res = await useNuxtApp().$api(VOTING_API.receipt(election.value.id), { headers: voterAuthHeader() });
+    receipt.value = res?.data ?? null;
+  } catch (e) {
+    if (apiError(e).status === 401) authStore.clearSession();
+  }
+}
+
+async function loadVoter() {
+  if (!authenticated.value || !election.value) return;
+  try {
+    const res = await useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() });
+    voter.value = res?.data ?? null;
+    if (voter.value?.election?.has_voted) await loadReceipt();
+  } catch (e) {
+    if (apiError(e).status === 401) {
+      authStore.clearSession();
+      voter.value = null;
+    }
+  }
+}
+
+const reasonText = computed(() => {
+  const ve = voter.value?.election;
+  if (!ve || ve.eligible || ve.has_voted || phase.value !== "open") return "";
+  return REASON_TEXT[ve.reason] || "Kamu tidak bisa memilih pada pemilihan ini.";
+});
+const showCandidates = computed(
+  () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !receipt.value,
+);
+const canVote = computed(
+  () => phase.value === "open" && authenticated.value && !!voter.value?.election?.eligible && !receipt.value,
+);
 
 const selected = ref(null);
 const selectedCandidate = computed(() => candidateList.value.find((c) => c.id === selected.value) || null);
@@ -293,65 +360,79 @@ function openLogin() {
   document.querySelector('[data-modal-toggle="authentication-modal"]')?.click();
 }
 
+// Saat hitung mundur habis, minta fase baru ke BE (jangan menebak sendiri).
 let timer;
-let lastPhase = state.value.phase;
+let lastRefresh = 0;
 onMounted(async () => {
-  timer = setInterval(() => {
-    now.value = new Date();
-    if (state.value.phase !== lastPhase) {
-      lastPhase = state.value.phase;
-      refreshSetting();
+  await refreshElection(); // server_time segar untuk offset jam di browser
+  await loadVoter();
+  timer = setInterval(async () => {
+    const now = Date.now() + offset.value;
+    const boundary = phase.value === "upcoming" ? startAt.value : phase.value === "open" ? endAt.value : null;
+    if (boundary && now >= boundary.getTime() && Date.now() - lastRefresh > 10000) {
+      lastRefresh = Date.now();
+      await refreshElection();
+      await loadVoter();
     }
   }, 1000);
-
-  // Sinkronkan status sudah/belum memilih dengan BE (cookie bisa basi / perangkat lain).
-  const token = useCookie("token").value;
-  if (token && state.value.phase !== "unpublished") {
-    try {
-      const res = await useNuxtApp().$api(VOTING_ENDPOINTS.status, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const r = res?.result ?? {};
-      if (r.voting_status === true || r.has_voted === true) markVoted(r.voted_at);
-    } catch (e) {
-      if (e?.status === 401) {
-        // Token kedaluwarsa: minta masuk lagi.
-        useCookie("token").value = null;
-        authenticated.value = false;
-      }
-    }
-  }
 });
 onBeforeUnmount(() => clearInterval(timer));
 
-const submitVote = async () => {
-  if (!selectedCandidate.value || state.value.phase !== "open") return;
+// Masuk dari navbar → muat status pemilih; keluar → bersihkan.
+watch(authenticated, (v) => {
+  if (v) loadVoter();
+  else {
+    voter.value = null;
+    receipt.value = null;
+  }
+});
 
-  const ok = await alertStore.openModal({
-    component: markRaw(AppAlertConfirm),
-    props: { text: `Kirim pilihan untuk ${selectedCandidate.value.name}? Pilihan tidak bisa diubah.` },
-  });
-  if (!ok) return;
+function showReceipt(r) {
+  receipt.value = r;
+  selected.value = null;
+  if (voter.value?.election) voter.value.election.has_voted = true;
+  useCookie("is-vote").value = "true";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+const submitVote = async () => {
+  if (!selectedCandidate.value || !canVote.value || voteLoading.value) return;
+  try {
+    await alertStore.openModal({
+      component: markRaw(AppAlertConfirm),
+      props: { text: `Yakin memilih ${selectedCandidate.value.name}? Suara tidak bisa diubah.` },
+    });
+  } catch {
+    return; // dibatalkan
+  }
 
   voteLoading.value = true;
+  const id = election.value.id;
   try {
-    const res = await useNuxtApp().$api(VOTING_ENDPOINTS.vote, {
+    const res = await useNuxtApp().$api(VOTING_API.vote(id), {
       method: "POST",
-      headers: { Authorization: `Bearer ${useCookie("token").value}` },
-      body: createFormData({ voting_candidate_id: selectedCandidate.value.id }),
+      headers: voterAuthHeader(),
+      body: { candidate_id: selectedCandidate.value.id },
     });
-    if (res?.code === 200) {
-      record(res?.result?.voted_at ?? res?.result?.created_at);
-      selected.value = null;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      alertStore.openModal({ component: markRaw(AppAlertSuccess), props: { text: "Suaramu sudah tercatat" } });
-    } else {
-      if (/sudah memilih/i.test(res?.message || "")) markVoted(res?.result?.voted_at);
-      alertStore.openModal({ component: markRaw(AppAlertError), props: { text: res?.message || "Gagal mengirim pilihan" } });
-    }
+    showReceipt(res.data);
+    alertStore.openModal({ component: markRaw(AppAlertSuccess), props: { text: "Suaramu sudah tercatat" } });
   } catch (e) {
-    const msg = e?.status === 401 ? "Sesi berakhir, silakan masuk lagi." : e?.data?.message || "Gagal mengirim pilihan";
-    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: msg } });
+    const err = apiError(e);
+    if (err.code === "already_voted" && err.body?.receipt_code) {
+      showReceipt({ receipt_code: err.body.receipt_code, recorded_at: err.body.recorded_at });
+      return;
+    }
+    if (err.status === 0) {
+      // Jaringan putus: pastikan dulu apakah suara sudah masuk sebelum mencoba lagi.
+      await loadReceipt();
+      if (receipt.value) return showReceipt(receipt.value);
+    }
+    if (err.status === 401) {
+      authStore.clearSession();
+      err.message = "Sesi berakhir, silakan masuk lagi.";
+    }
+    if (err.status === 423) await refreshElection();
+    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: err.message } });
   } finally {
     voteLoading.value = false;
   }

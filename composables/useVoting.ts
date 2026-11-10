@@ -1,43 +1,77 @@
 /**
- * Lapisan data voting: satu tempat yang menerjemahkan respons BE ke bentuk
- * yang dipakai halaman /app/vote. Kalau kontrak BE voting v2 berubah, cukup
- * sesuaikan file ini (endpoint + normalisasi), bukan halamannya.
+ * Lapisan data voting v2 (kontrak: himasif-id-v2-be docs/handoff/voting-api-v2.md).
+ * Semua panggilan lewat proxy /api/be (x-api-key ditambahkan di server).
  */
 
-export type VotePhase = "unpublished" | "upcoming" | "open" | "closed" | "announced";
+export type VotePhase = "none" | "upcoming" | "open" | "closed" | "announced";
 
-export interface VoteCandidate {
+export interface Candidate {
   id: number;
-  name: string;
   order?: number;
+  name: string;
   year_of_study?: number | string;
   visi?: string;
   misi?: string;
-  image?: { url?: string }[] | string | null;
+  photo_url?: string | null;
 }
 
-export interface VoteState {
-  phase: VotePhase;
-  startAt: Date | null;
-  endAt: Date | null;
-  winner: VoteCandidate | null;
+export interface Winner {
+  name: string;
+  photo_url?: string | null;
+  year_of_study?: number | string;
 }
 
-export const VOTING_ENDPOINTS = {
-  setting: "/vote_setting",
-  candidates: "/voting_candidate",
-  status: "/vote-status",
-  vote: "/vote",
-  // {{Assumption}} sampai docs/handoff/voting-api-v2.md di repo BE tersedia.
-  magicLogin: "/voting/magic-login",
+export interface Election {
+  id: number;
+  name: string;
+  round: number;
+  phase: Exclude<VotePhase, "none">;
+  start_at: string;
+  end_at: string;
+  server_time: string;
+  voter_years?: number[];
+  candidates: Candidate[];
+  result: { announced_at?: string; winner: Winner } | null;
+}
+
+export interface Voter {
+  name: string;
+  nim: string;
+  year?: number;
+  election: { id: number; eligible: boolean; has_voted: boolean; reason: string | null } | null;
+}
+
+export interface Receipt {
+  receipt_code: string;
+  recorded_at: string;
+}
+
+export const VOTING_API = {
+  current: "/v2/elections/current",
+  election: (id: number) => `/v2/elections/${id}`,
+  result: (id: number) => `/v2/elections/${id}/result`,
+  magicLink: "/v2/auth/magic-link",
+  login: "/v2/auth/login",
+  logout: "/v2/auth/logout",
+  me: "/v2/me",
+  vote: (id: number) => `/v2/elections/${id}/vote`,
+  receipt: (id: number) => `/v2/elections/${id}/receipt`,
 } as const;
 
 export const HIMASIF_INSTAGRAM = "https://www.instagram.com/himasif/";
 
+export const REASON_TEXT: Record<string, string> = {
+  not_in_roster: "NIM kamu tidak ada di daftar pemilih resmi. Hubungi panitia bila ini keliru.",
+  year_out_of_range: "Angkatanmu tidak termasuk pemilih pada pemilihan ini.",
+  account_inactive: "Akunmu tidak aktif. Hubungi panitia.",
+  election_not_open: "Pemungutan suara belum dibuka.",
+  election_closed: "Pemungutan suara sudah ditutup.",
+  already_voted: "Kamu sudah memilih.",
+};
+
 /**
- * Jam di CMS diisi dalam WIB tanpa zona waktu ("2026-12-12T19:30:00").
- * Parse eksplisit sebagai +07:00 supaya SSR (Vercel = UTC) dan browser di
- * zona lain menghasilkan waktu yang sama.
+ * Waktu BE v2 sudah ber-offset (+07:00). Untuk jaga-jaga, waktu tanpa zona
+ * dibaca sebagai WIB (bukan zona server/HP) supaya SSR di Vercel (UTC) sama.
  */
 export function parseWib(value: unknown): Date | null {
   if (!value) return null;
@@ -68,67 +102,48 @@ export function formatWib(d: Date | null, withDay = true): string {
   return `${date} pukul ${time} WIB`;
 }
 
-const KNOWN_PHASES: VotePhase[] = ["unpublished", "upcoming", "open", "closed", "announced"];
-
-/** Respons vote setting (v1 sekarang, v2 nanti) → VoteState. */
-export function normalizeVoteSetting(raw: any, now: Date = new Date()): VoteState {
-  const r = raw?.result ?? raw ?? {};
-  const startAt = parseWib(r.start_at);
-  const endAt = parseWib(r.end_at);
-  const winner = (r.winner ?? r.elected ?? null) as VoteCandidate | null;
-
-  // v2: BE boleh mengirim status eksplisit.
-  const explicit = String(r.status ?? r.phase ?? "").toLowerCase() as VotePhase;
-  let phase: VotePhase;
-  if (KNOWN_PHASES.includes(explicit)) {
-    phase = explicit;
-  } else if (Number(r.is_published) === 0) {
-    phase = "unpublished";
-  } else if (winner || r.is_announced == 1 || r.announced_at) {
-    phase = "announced";
-  } else if (startAt && now < startAt) {
-    phase = "upcoming";
-  } else if (endAt && now >= endAt) {
-    phase = "closed";
-  } else {
-    phase = "open";
-  }
-  if (phase === "announced" && !winner) phase = "closed";
-
-  return { phase, startAt, endAt, winner };
+/** Galat API v2 → bentuk seragam. FE memutuskan dari `code`, bukan teks. */
+export interface ApiErr {
+  status: number;
+  code: string;
+  message: string;
+  body: any;
+  retryAfter: number | null;
 }
 
-export function candidateImage(c: VoteCandidate | null | undefined): string {
-  const img = c?.image;
-  if (typeof img === "string" && img) return img;
-  if (Array.isArray(img) && img[0]?.url) return img[0].url as string;
-  return "/img/logo/himasif-white.png";
+export function apiError(e: any): ApiErr {
+  const status = Number(e?.status ?? e?.statusCode ?? e?.response?.status ?? 0);
+  const body = e?.data ?? null;
+  const err = body?.error ?? {};
+  const ra = Number(e?.response?.headers?.get?.("retry-after"));
+  const retryAfter = Number.isFinite(ra) && ra > 0 ? ra : null;
+  let message: string = err.message || body?.message || "";
+  if (status === 429) {
+    message = `Terlalu banyak percobaan, coba lagi dalam ${retryAfter ?? 60} detik.`;
+  } else if (!message) {
+    message = status ? "Terjadi kesalahan. Coba lagi." : "Koneksi terputus. Periksa internetmu lalu coba lagi.";
+  }
+  return { status, code: err.code || (status === 429 ? "rate_limited" : ""), message, body: err, retryAfter };
 }
 
-/** Bukti memilih tersimpan di cookie supaya tetap tampil setelah reload. */
-export function useVoteReceipt() {
-  const votedAt = useCookie<string | null>("voted-at", {
-    maxAge: 60 * 60 * 24 * 30,
-    sameSite: "lax",
-  });
-  const isVote = useCookie<string | boolean | null>("is-vote");
-  const hasVoted = computed(() => isVote.value === true || isVote.value === "true");
-  /** Tandai sudah memilih. `at` = waktu dari BE (kalau ada), selain itu jam sekarang. */
-  function record(at?: unknown) {
-    const d = parseWib(at) ?? new Date();
-    votedAt.value = d.toISOString();
-    isVote.value = "true";
-  }
-  /** Sudah memilih tapi waktunya tidak diketahui (mis. memilih di perangkat lain). */
-  function markVoted(at?: unknown) {
-    const d = parseWib(at);
-    if (d) votedAt.value = d.toISOString();
-    isVote.value = "true";
-  }
-  return {
-    hasVoted,
-    votedAt: computed(() => (votedAt.value ? new Date(votedAt.value) : null)),
-    record,
-    markVoted,
-  };
+export function candidatePhoto(c: { photo_url?: string | null } | null | undefined): string {
+  return c?.photo_url || "/img/logo/himasif-white.png";
+}
+
+/** Selisih jam server − jam perangkat (ms), supaya hitung mundur tidak ikut jam HP yang salah. */
+export function clockOffset(serverTime: unknown, receivedAt = Date.now()): number {
+  const d = parseWib(serverTime);
+  return d ? d.getTime() - receivedAt : 0;
+}
+
+/** Pemilih boleh mengetik NIM atau email UNEJ. */
+export function loginBody(id: string, password: string) {
+  const v = String(id || "").trim();
+  return /^\d{8,20}$/.test(v) ? { nim: v, password } : { email: v, password };
+}
+
+/** Header Bearer dari cookie sesi pemilih. */
+export function voterAuthHeader(): Record<string, string> {
+  const t = useCookie("token").value;
+  return t ? { Authorization: `Bearer ${t}` } : {};
 }

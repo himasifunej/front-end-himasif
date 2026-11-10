@@ -25,6 +25,8 @@ const props = defineProps({
   target: { type: Date, default: null },
   label: { type: String, default: "" },
   compact: { type: Boolean, default: false },
+  /** jam server − jam perangkat (ms) */
+  offset: { type: Number, default: 0 },
 });
 
 const units = [
@@ -43,7 +45,7 @@ onBeforeUnmount(() => clearInterval(t));
 
 const parts = computed(() => {
   if (!props.target || now.value === null) return { d: 0, h: 0, m: 0, s: 0 };
-  const diff = Math.max(0, props.target.getTime() - now.value);
+  const diff = Math.max(0, props.target.getTime() - (now.value + props.offset));
   const s = Math.floor(diff / 1000);
   return { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
 });

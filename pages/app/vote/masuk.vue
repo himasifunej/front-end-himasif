@@ -18,7 +18,7 @@
             class="w-full px-5 py-3 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
             @click="exchange"
           >
-            Masuk &amp; buka halaman voting
+            Masuk &amp; pilih
           </button>
         </template>
 
@@ -54,21 +54,22 @@
 </template>
 
 <script setup>
-// Magic link dari email: /app/vote/masuk?token=...
-// - Token TIDAK ditukar saat halaman dibuka (SSR/GET), hanya setelah pemilih menekan tombol,
-//   supaya pemindai tautan di email (Outlook Safe Links, dll.) tidak menghabiskan token sekali-pakai.
+// Magic link dari email: /app/vote/masuk?t=<token> (kontrak v2).
+// - Token TIDAK ditukar saat halaman dibuka, hanya setelah pemilih menekan tombol,
+//   supaya pemindai tautan email (Outlook Safe Links, antivirus kampus) tidak menghabiskan token sekali pakai.
 // - Token dihapus dari address bar begitu halaman dimuat (tidak tersimpan di riwayat/Referer).
 useHead({ title: "Masuk Voting", meta: [{ name: "robots", content: "noindex, nofollow" }] });
 
 const route = useRoute();
 const authStore = useAuthStore();
 
-const token = ref(typeof route.query.token === "string" ? route.query.token : "");
+const q = route.query.t ?? route.query.token;
+const token = ref(typeof q === "string" ? q : "");
 const status = ref(token.value ? "ready" : "error");
 const errorText = ref(token.value ? "" : "Tautan masuk tidak lengkap. Buka lagi tautan dari email voting kamu.");
 
 onMounted(() => {
-  if (route.query.token) {
+  if (route.query.t || route.query.token) {
     history.replaceState(history.state, "", route.path);
   }
 });
@@ -77,30 +78,37 @@ function openLogin() {
   document.querySelector('[data-modal-toggle="authentication-modal"]')?.click();
 }
 
+const MESSAGES = {
+  magic_link_invalid: "Tautan tidak dikenal. Pastikan kamu membuka tautan terbaru dari email voting.",
+  magic_link_used: "Tautan ini sudah dipakai. Masuk pakai NIM dan password di email yang sama.",
+  magic_link_expired: "Tautan ini sudah tidak berlaku (pemilihan ditutup atau tautan sudah diganti kiriman baru).",
+};
+
 async function exchange() {
   status.value = "loading";
   try {
-    const res = await useNuxtApp().$api(VOTING_ENDPOINTS.magicLogin, {
+    const res = await useNuxtApp().$api(VOTING_API.magicLink, {
       method: "POST",
       body: { token: token.value },
     });
-    // {{Assumption}} bentuk respons sama dengan /login: { token, data: { username, vote_status } }.
-    const sessionToken = res?.token ?? res?.result?.token;
-    if (!sessionToken) throw { data: res };
-    authStore.setSession(sessionToken, res?.data ?? res?.result?.user ?? {});
+    const d = res?.data ?? {};
+    if (!d.token) throw { data: res };
+    authStore.setSession(d.token, d.voter, d.expires_at);
     token.value = "";
     await navigateTo("/app/vote", { replace: true });
   } catch (e) {
+    const err = apiError(e);
+    if (err.code === "election_not_open") {
+      // Token tidak hangus: pemilih bisa membuka tautan yang sama saat voting dibuka.
+      status.value = "error";
+      const start = parseWib(err.body?.start_at);
+      errorText.value = start
+        ? `Voting belum dibuka. Buka lagi tautan yang sama mulai ${formatWib(start)}.`
+        : "Voting belum dibuka. Buka lagi tautan yang sama saat voting dimulai.";
+      return;
+    }
     status.value = "error";
-    const code = e?.status;
-    errorText.value =
-      e?.data?.message ||
-      e?.data?.info ||
-      (code === 410 || code === 401
-        ? "Tautan sudah dipakai atau kedaluwarsa."
-        : code === 429
-          ? "Terlalu banyak percobaan. Coba lagi beberapa menit lagi."
-          : "Tautan sudah dipakai, kedaluwarsa, atau tidak valid.");
+    errorText.value = MESSAGES[err.code] || err.message || "Tautan tidak bisa dipakai.";
   }
 }
 </script>

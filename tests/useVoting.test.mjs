@@ -1,33 +1,44 @@
-// node --experimental-strip-types --test tests/
+// npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, normalizeVoteSetting } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto } from "../composables/useVoting.ts";
 
-const S = (o) => ({ result: { is_published: 1, start_at: "2026-12-12T08:00:00", end_at: "2026-12-12T19:30:00", ...o } });
-
-test("parseWib membaca isian CMS sebagai WIB", () => {
+test("parseWib: offset v2 dihormati, waktu tanpa zona dibaca WIB", () => {
+  assert.equal(parseWib("2026-12-01T18:00:00+07:00").toISOString(), "2026-12-01T11:00:00.000Z");
   assert.equal(parseWib("2026-12-12T19:30:00").toISOString(), "2026-12-12T12:30:00.000Z");
-  assert.equal(parseWib("2026-12-12 19:30:00").toISOString(), "2026-12-12T12:30:00.000Z");
   assert.equal(parseWib("2026-11-10T00:45:39.000000Z").toISOString(), "2026-11-10T00:45:39.000Z");
   assert.equal(parseWib(null), null);
   assert.equal(parseWib("bukan tanggal"), null);
 });
 
 test("formatWib", () => {
-  assert.equal(formatWib(parseWib("2026-12-12T19:30:00")), "Sabtu, 12 Desember 2026 pukul 19.30 WIB");
+  assert.equal(formatWib(parseWib("2026-12-12T19:30:00+07:00")), "Sabtu, 12 Desember 2026 pukul 19.30 WIB");
 });
 
-test("fase dari jam", () => {
-  const at = (s) => new Date(parseWib(s));
-  assert.equal(normalizeVoteSetting(S(), at("2026-12-12T07:59:59")).phase, "upcoming");
-  assert.equal(normalizeVoteSetting(S(), at("2026-12-12T08:00:00")).phase, "open");
-  assert.equal(normalizeVoteSetting(S(), at("2026-12-12T19:30:00")).phase, "closed");
-  assert.equal(normalizeVoteSetting(S({ is_published: "0" }), at("2026-12-12T10:00:00")).phase, "unpublished");
+test("apiError membaca {error:{code,message}} dan Retry-After", () => {
+  const e = apiError({ status: 410, data: { error: { code: "magic_link_used", message: "Tautan sudah dipakai." } } });
+  assert.equal(e.code, "magic_link_used");
+  assert.equal(e.message, "Tautan sudah dipakai.");
+  const r = apiError({ status: 429, data: {}, response: { headers: new Headers({ "retry-after": "42" }) } });
+  assert.equal(r.code, "rate_limited");
+  assert.match(r.message, /42 detik/);
+  assert.equal(apiError(new TypeError("fetch failed")).status, 0);
+  const v = apiError({ statusCode: 422, data: { message: "The nim field is required.", errors: {} } });
+  assert.equal(v.message, "The nim field is required.");
 });
 
-test("diumumkan hanya bila ada pemenang", () => {
-  const w = { id: 1, name: "A" };
-  assert.equal(normalizeVoteSetting(S({ winner: w }), new Date("2027-01-01")).phase, "announced");
-  assert.equal(normalizeVoteSetting(S({ status: "announced" }), new Date("2027-01-01")).phase, "closed");
-  assert.equal(normalizeVoteSetting(S({ status: "open" }), new Date("2027-01-01")).phase, "open");
+test("clockOffset", () => {
+  const now = Date.parse("2026-12-01T02:00:00Z");
+  assert.equal(clockOffset("2026-12-01T09:00:05+07:00", now), 5000);
+  assert.equal(clockOffset(null, now), 0);
+});
+
+test("loginBody: NIM atau email", () => {
+  assert.deepEqual(loginBody(" 232410101090 ", "aB3kq"), { nim: "232410101090", password: "aB3kq" });
+  assert.deepEqual(loginBody("232410101090@mail.unej.ac.id", "x"), { email: "232410101090@mail.unej.ac.id", password: "x" });
+});
+
+test("candidatePhoto fallback", () => {
+  assert.equal(candidatePhoto({ photo_url: "https://x/a.jpg" }), "https://x/a.jpg");
+  assert.equal(candidatePhoto(null), "/img/logo/himasif-white.png");
 });

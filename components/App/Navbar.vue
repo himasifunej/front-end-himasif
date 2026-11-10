@@ -121,7 +121,7 @@
                                                 <div class="relative">
 
                                                     <input type="password" name="password" id="password"
-                                                        placeholder="Password" v-model="user.password"
+                                                        placeholder="Password dari email voting" v-model="user.password"
                                                         autocomplete="current-password" v-if="!passwordShow"
                                                         class="border border-border-primary dark:border-border-primary-dark  bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark  block w-full py-2 px-[10px] "
                                                         required>
