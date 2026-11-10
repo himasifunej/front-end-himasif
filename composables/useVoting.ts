@@ -126,6 +126,21 @@ export function apiError(e: any): ApiErr {
   return { status, code: err.code || (status === 429 ? "too_many_attempts" : ""), message, body: err, retryAfter };
 }
 
+/**
+ * Periode kepengurusan untuk pengumuman. API v2 belum mengirim field periode
+ * ({{Assumption}}): pakai result.period bila ada, lalu "2026–2027"/"2026/2027" di nama
+ * pemilihan, lalu tahun di nama/start_at → "Y–(Y+1)".
+ */
+export function electionPeriod(e: { name?: string; start_at?: string; result?: any } | null | undefined): string {
+  const explicit = e?.result?.period;
+  if (typeof explicit === "string" && explicit.trim()) return explicit.trim().replace(/\s*[-/]\s*/, "–");
+  const name = String(e?.name ?? "");
+  const range = name.match(/(20\d{2})\s*[–\-/]\s*(20\d{2})/);
+  if (range) return `${range[1]}–${range[2]}`;
+  const y = Number(name.match(/20\d{2}/)?.[0] ?? parseWib(e?.start_at)?.getUTCFullYear() ?? NaN);
+  return Number.isFinite(y) ? `${y}–${y + 1}` : "";
+}
+
 export function candidatePhoto(c: { photo_url?: string | null } | null | undefined): string {
   return c?.photo_url || "/img/logo/himasif-white.png";
 }

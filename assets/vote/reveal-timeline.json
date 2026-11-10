@@ -1,0 +1,31 @@
+{
+  "source": "Orchestral Opener.mp3 (public/audio/reveal-opener.mp3, 128 kbps)",
+  "analysis": "librosa 1.0: beat_track + onset_detect + RMS 1s window; times in seconds",
+  "duration": 18.05,
+  "tempo_bpm": 143.55,
+  "beat_interval": 0.418,
+  "beats": [0.929, 1.324, 1.741, 2.159, 2.577, 3.019, 3.46, 3.878, 4.319, 4.737, 5.178, 5.596, 6.014, 6.455, 6.896, 7.314, 7.755, 8.173, 8.591, 9.033, 9.451, 9.892, 10.31, 10.751, 11.169, 11.61, 12.028, 12.446, 12.864, 13.305, 13.746, 14.164],
+  "accents": [1.741, 2.159, 2.577, 3.46, 6.014, 6.455, 7.036, 8.591, 9.451, 12.167, 12.446, 12.864, 13.746, 14.164],
+  "climax": 11.169,
+  "tail_fade": [15.0, 16.6],
+  "cues": {
+    "veil": { "at": 0, "dur": 0.28, "on": "klik: latar gelap memudar masuk" },
+    "rise": { "at": 0.28, "dur": 0.65, "on": "layar putih naik dari bawah (translateY 100%→0, cubic-bezier(.2,0,0,1)), penuh tepat di beat 1 (0.929)" },
+    "light": { "at": 1.741, "dur": 1.7, "on": "aksen 1.741: kilau cahaya menyapu" },
+    "ketuaIn": { "at": 2.159, "dur": 0.8, "on": "hit kuat 2.159 (5.11): KETUA UMUM dibuka wipe" },
+    "ketuaOut": { "at": 5.178, "dur": 0.45, "on": "beat 5.178: KETUA UMUM ditutup wipe" },
+    "himasifIn": { "at": 6.014, "dur": 0.8, "on": "aksen 6.014 (4.58): HIMASIF" },
+    "line": { "at": 7.036, "dur": 0.55, "on": "aksen 7.036: garis" },
+    "year": { "at": 7.314, "dur": 0.5, "on": "beat 7.314: 2026–2027" },
+    "himasifOut": { "at": 8.591, "dur": 0.4, "on": "aksen 8.591: HIMASIF + periode keluar" },
+    "bang1": { "at": 9.451, "dur": 0.3, "on": "hit terkuat 9.451 (5.53): bilah ! pertama" },
+    "bang2": { "at": 9.892, "dur": 0.3, "on": "beat 9.892: bilah ! kedua" },
+    "bang3": { "at": 10.31, "dur": 0.3, "on": "beat 10.31: bilah ! ketiga" },
+    "iris": { "at": 10.751, "dur": 0.418, "on": "beat 10.751 → menutup tepat di klimaks 11.169" },
+    "photo": { "at": 11.169, "dur": 1.0, "on": "KLIMAKS 11.169 (RMS puncak): foto muncul" },
+    "name": { "at": 12.446, "dur": 0.9, "on": "aksen 12.446 (4.96): nama dibuka wipe" },
+    "rule": { "at": 12.864, "dur": 0.7, "on": "aksen 12.864: garis bawah nama" },
+    "meta": { "at": 13.305, "dur": 0.6, "on": "beat 13.305: jabatan + periode" },
+    "next": { "at": 14.164, "dur": 0.5, "on": "hit akhir 14.164 (5.11): tombol Lanjut; tahan sampai diklik" }
+  }
+}

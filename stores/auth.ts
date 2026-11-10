@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { AppAlertError, AppAlertSuccess, AppAlertConfirm } from "#components";
+import { AppAlertConfirm } from "#components";
 
 interface UserPayloadInterface {
   /** NIM atau email UNEJ */
@@ -45,17 +45,11 @@ export const useAuthStore = defineStore({
         const d = res?.data ?? {};
         if (!d.token) throw { data: res };
         this.setSession(d.token, d.voter, d.expires_at);
-        useAlertsStore().openModal({
-          component: AppAlertSuccess,
-          props: { text: `Halo, ${d.voter?.name || "Sisforian"}! Kamu sudah masuk.` },
-        });
+        useToast().success(`Halo, ${d.voter?.name || "Sisforian"}!`, "Kamu sudah masuk.");
         return true;
       } catch (e) {
         this.authenticated = false;
-        useAlertsStore().openModal({
-          component: AppAlertError,
-          props: { text: apiError(e).message || "Login gagal" },
-        });
+        useToast().error("Gagal masuk", apiError(e).message || "Periksa NIM/email dan password.");
         return false;
       } finally {
         this.loading = false;
@@ -80,10 +74,7 @@ export const useAuthStore = defineStore({
       }
       this.clearSession();
 
-      useAlertsStore().openModal({
-        component: AppAlertSuccess,
-        props: { text: "Kamu sudah keluar" },
-      });
+      useToast().info("Kamu sudah keluar");
       useRouter().push({ path: "/" });
     },
   },

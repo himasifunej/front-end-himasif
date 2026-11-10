@@ -1,7 +1,15 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod } from "../composables/useVoting.ts";
+
+test("electionPeriod", () => {
+  assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
+  assert.equal(electionPeriod({ name: "Pemira 2026/2027" }), "2026–2027");
+  assert.equal(electionPeriod({ name: "x", result: { period: "2027-2028" } }), "2027–2028");
+  assert.equal(electionPeriod({ name: "Uji (dummy)", start_at: "2026-11-10T11:47:07+07:00" }), "2026–2027");
+  assert.equal(electionPeriod(null), "");
+});
 
 test("parseWib: offset v2 dihormati, waktu tanpa zona dibaca WIB", () => {
   assert.equal(parseWib("2026-12-01T18:00:00+07:00").toISOString(), "2026-12-01T11:00:00.000Z");
