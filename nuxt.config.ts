@@ -1,10 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // ssr: false,
+  // PRIVAT (hanya server). Jangan pindahkan ke `public`: key akan ikut bundle JS.
+  // Di Vercel: NUXT_BE_API_KEY (wajib), NUXT_BE_API_BASE (opsional, menimpa
+  // API_BASE_URL saat runtime), NUXT_BE_PROXY_SECRET (opsional, lihat docs/api-proxy.md).
   runtimeConfig: {
-    public: {
-      API_BASE: process.env.API_BASE_URL || "https://v2.himasif.id/api",
-    },
+    beApiKey: "",
+    beApiBase: process.env.API_BASE_URL || "https://v2.himasif.id/api",
+    beProxySecret: "",
   },
 
   router: {
