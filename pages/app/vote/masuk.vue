@@ -4,8 +4,9 @@
       <AppBackgroundHeader background-image="vote.jpeg" />
     </div>
 
-    <div class="relative z-20 px-4 pt-10 pb-16">
-      <div class="w-full max-w-md mx-auto rounded-2xl bg-black/70 backdrop-blur-md border border-white/10 p-6 md:p-8 space-y-5 text-center">
+    <!-- Kartu di tengah layar, di bawah navbar (tidak tertimpa), pas di semua lebar. -->
+    <div class="relative z-20 min-h-[100svh] flex items-center justify-center px-4 pt-28 pb-12 md:pt-32">
+      <div class="w-full max-w-md rounded-2xl bg-black/70 backdrop-blur-md border border-white/10 p-6 md:p-8 flex flex-col items-center gap-5 text-center">
         <NuxtImg src="/img/logo/himasif-white.png" alt="Logo HIMASIF" width="72" class="mx-auto" />
 
         <template v-if="status === 'ready'">
@@ -15,7 +16,7 @@
           </p>
           <button
             type="button"
-            class="w-full px-5 py-3 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
+            class="w-full flex items-center justify-center px-5 py-3 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
             @click="exchange"
           >
             Masuk &amp; pilih
@@ -33,10 +34,10 @@
         <template v-else>
           <h1 class="text-xl md:text-2xl font-bold">Tautan tidak bisa dipakai</h1>
           <p class="text-sm text-white/70">{{ errorText }}</p>
-          <div class="space-y-2">
+          <div class="w-full space-y-2">
             <button
               type="button"
-              class="w-full px-5 py-3 rounded-lg font-semibold border border-[#FF6D00] hover:bg-[#FF6D00] hover:text-black transition"
+              class="w-full flex items-center justify-center px-5 py-3 rounded-lg font-semibold border border-[#FF6D00] hover:bg-[#FF6D00] hover:text-black transition"
               @click="openLogin"
             >
               Masuk dengan NIM &amp; password
