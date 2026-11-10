@@ -116,6 +116,34 @@ function now() {
 const clamp = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const inOut = (p) => (p < 0.5 ? 8 * p ** 4 : 1 - 8 * (1 - p) ** 4); // ≈ cubic-bezier(.7,0,.2,1)
 const out = (p) => 1 - (1 - p) ** 3;
+// cubic-bezier(x1,y1,x2,y2) seperti CSS (Newton + bisection), untuk naiknya layar putih.
+function bezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = (u) => ((ax * u + bx) * u + cx) * u;
+  const Y = (u) => ((ay * u + by) * u + cy) * u;
+  const dX = (u) => (3 * ax * u + 2 * bx) * u + cx;
+  return (x) => {
+    let u = x;
+    for (let i = 0; i < 6; i++) {
+      const e = X(u) - x;
+      const d = dX(u);
+      if (Math.abs(e) < 1e-5 || Math.abs(d) < 1e-6) break;
+      u -= e / d;
+    }
+    if (u < 0 || u > 1 || Math.abs(X(u) - x) > 1e-4) {
+      let lo = 0, hi = 1;
+      u = x;
+      for (let i = 0; i < 30; i++) {
+        if (X(u) < x) lo = u;
+        else hi = u;
+        u = (lo + hi) / 2;
+      }
+    }
+    return Y(u);
+  };
+}
+const soft = bezier(0.2, 0, 0, 1);
 const prog = (cue, t, ease = inOut) => ease(clamp((t - cue.at) / cue.dur));
 
 function render() {
@@ -123,7 +151,8 @@ function render() {
   const el = root.value;
   if (el) {
     const v = {
-      slit: prog(C.slit, t),
+      veil: prog(C.veil, t, out),
+      rise: prog(C.rise, t, soft),
       light: prog(C.light, t, (p) => p),
       kIn: prog(C.ketuaIn, t),
       kOut: prog(C.ketuaOut, t),
@@ -343,7 +372,8 @@ defineExpose({ start });
   position: fixed;
   inset: 0;
   z-index: 70;
-  background: var(--ink);
+  /* latar gelap memudar masuk dulu (tidak ada kedip), lalu layar putih naik dari bawah */
+  background: rgb(15 15 18 / var(--veil, 0));
   color: #fff;
   overflow: hidden;
   font-family: Poppins, system-ui, sans-serif;
@@ -361,7 +391,8 @@ defineExpose({ start });
   display: flex;
   align-items: center;
   justify-content: center;
-  clip-path: inset(calc((1 - var(--slit, 0)) * 49.8%) 0 calc((1 - var(--slit, 0)) * 49.8%) 0);
+  transform: translate3d(0, calc((1 - var(--rise, 0)) * 100%), 0);
+  will-change: transform;
 }
 .rv-light {
   position: absolute;
@@ -609,7 +640,8 @@ defineExpose({ start });
 /* Gerak dikurangi: urutan & waktu tetap mengikuti musik, tapi hanya memudar (tanpa wipe/zoom/iris besar). */
 .rv-rm .rv-white {
   clip-path: none;
-  opacity: var(--slit, 0);
+  transform: none;
+  opacity: var(--rise, 0);
 }
 .rv-rm .rv-light {
   display: none;
