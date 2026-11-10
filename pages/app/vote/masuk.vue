@@ -79,9 +79,10 @@ function openLogin() {
 }
 
 const MESSAGES = {
-  magic_link_invalid: "Tautan tidak dikenal. Pastikan kamu membuka tautan terbaru dari email voting.",
+  magic_link_invalid: "Tautan tidak dikenal atau sudah diganti. Pakai tautan dari email voting terbaru.",
   magic_link_used: "Tautan ini sudah dipakai. Masuk pakai NIM dan password di email yang sama.",
-  magic_link_expired: "Tautan ini sudah tidak berlaku (pemilihan ditutup atau tautan sudah diganti kiriman baru).",
+  magic_link_expired: "Tautan ini sudah tidak berlaku karena pemilihannya sudah ditutup.",
+  account_inactive: "Akunmu tidak aktif. Hubungi panitia lewat Instagram @himasif.",
 };
 
 async function exchange() {

@@ -115,7 +115,7 @@ export function apiError(e: any): ApiErr {
   const status = Number(e?.status ?? e?.statusCode ?? e?.response?.status ?? 0);
   const body = e?.data ?? null;
   const err = body?.error ?? {};
-  const ra = Number(e?.response?.headers?.get?.("retry-after"));
+  const ra = Number(e?.response?.headers?.get?.("retry-after") ?? err.retry_after);
   const retryAfter = Number.isFinite(ra) && ra > 0 ? ra : null;
   let message: string = err.message || body?.message || "";
   if (status === 429) {
@@ -123,7 +123,7 @@ export function apiError(e: any): ApiErr {
   } else if (!message) {
     message = status ? "Terjadi kesalahan. Coba lagi." : "Koneksi terputus. Periksa internetmu lalu coba lagi.";
   }
-  return { status, code: err.code || (status === 429 ? "rate_limited" : ""), message, body: err, retryAfter };
+  return { status, code: err.code || (status === 429 ? "too_many_attempts" : ""), message, body: err, retryAfter };
 }
 
 export function candidatePhoto(c: { photo_url?: string | null } | null | undefined): string {

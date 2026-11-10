@@ -20,7 +20,9 @@ test("apiError membaca {error:{code,message}} dan Retry-After", () => {
   assert.equal(e.code, "magic_link_used");
   assert.equal(e.message, "Tautan sudah dipakai.");
   const r = apiError({ status: 429, data: {}, response: { headers: new Headers({ "retry-after": "42" }) } });
-  assert.equal(r.code, "rate_limited");
+  assert.equal(r.code, "too_many_attempts");
+  const r2 = apiError({ status: 429, data: { error: { code: "too_many_attempts", message: "x", retry_after: 15 } } });
+  assert.equal(r2.retryAfter, 15);
   assert.match(r.message, /42 detik/);
   assert.equal(apiError(new TypeError("fetch failed")).status, 0);
   const v = apiError({ statusCode: 422, data: { message: "The nim field is required.", errors: {} } });
