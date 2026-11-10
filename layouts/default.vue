@@ -6,6 +6,7 @@
 
         <AppFooter></AppFooter>
         <AppAlertWindow />
+        <AppToaster />
     </div>
 </template>
   

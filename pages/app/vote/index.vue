@@ -39,7 +39,7 @@
                 <path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </div>
-            <div class="space-y-1">
+            <div class="space-y-1 flex-1 min-w-0">
               <h2 class="text-lg md:text-xl font-bold">Suaramu sudah tercatat</h2>
               <p class="text-sm md:text-base text-white/80">
                 {{ formatWib(parseWib(receipt.recorded_at)) }}
@@ -51,6 +51,35 @@
               <p class="text-xs md:text-sm text-white/60">
                 Pilihanmu bersifat rahasia dan tidak ditampilkan di sini. Terima kasih sudah ikut memilih.
               </p>
+              <div class="pt-3 border-t border-white/10 mt-3 space-y-3">
+                <p class="text-sm md:text-base text-white/90">
+                  Stay tune di Instagram <span class="font-semibold">@himasif</span> untuk pengumuman Ketua Umum terpilih.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <a
+                    :href="instagramUrl"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#FF6D00] hover:bg-[#FF7E1D] text-black font-semibold transition"
+                  >
+                    <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
+                    </svg>
+                    Stay tune di @himasif
+                  </a>
+                  <NuxtLink
+                    to="/"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/30 hover:bg-white/10 font-semibold transition"
+                  >
+                    Jelajahi himasif.id
+                    <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -156,16 +185,18 @@
 
           <!-- DAFTAR CALON (belum dibuka & dibuka) -->
           <section v-if="showCandidates" class="space-y-4">
-            <h2 class="text-lg md:text-xl font-bold">Calon Ketua Umum</h2>
-            <p v-if="canVote" class="text-sm text-white/70 -mt-2">Ketuk kartu calon untuk memilih, lalu kirim pilihanmu.</p>
+            <h2 class="text-lg md:text-xl font-bold text-center">Calon Ketua Umum</h2>
+            <p v-if="canVote" class="text-sm text-white/70 -mt-2 text-center">Ketuk kartu calon untuk memilih, lalu kirim pilihanmu.</p>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            <!-- flex-wrap + justify-center: 1–2 calon tetap rata tengah -->
+            <div class="flex flex-wrap justify-center gap-4 md:gap-6 pt-2">
               <article
                 v-for="c in candidateList"
                 :key="c.id"
-                class="rounded-2xl border overflow-hidden transition duration-200 bg-primary-900"
-                :class="selected === c.id ? 'border-[#3BC541] ring-2 ring-[#3BC541]' : 'border-primary-800'"
+                class="vote-card relative w-full sm:w-[calc(50%-0.75rem)] lg:w-[300px] rounded-2xl border overflow-hidden bg-primary-900"
+                :class="selected === c.id ? 'is-selected border-[#3BC541] ring-2 ring-[#3BC541]' : 'border-primary-800'"
               >
+                <span v-if="selected === c.id" class="vote-sweep" aria-hidden="true"></span>
                 <button
                   type="button"
                   class="w-full text-left flex sm:block disabled:cursor-default"
@@ -236,6 +267,47 @@
       </div>
     </div>
 
+    <!-- KONFIRMASI PILIHAN (modal sendiri, bukan dialog bawaan / generik) -->
+    <Teleport to="body">
+      <Transition name="vc">
+        <div
+          v-if="confirming && selectedCandidate"
+          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="vote-confirm-title"
+          @click.self="answerConfirm(false)"
+        >
+          <div class="vc-panel w-full sm:max-w-sm bg-[#161616] border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 text-center text-white shadow-2xl">
+            <img
+              :src="candidatePhoto(selectedCandidate)"
+              :alt="selectedCandidate.name"
+              class="mx-auto w-24 h-28 object-cover rounded-2xl border-2 border-[#3BC541]"
+              @error="onImageError"
+            />
+            <p class="mt-4 text-xs uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Konfirmasi pilihan</p>
+            <h3 id="vote-confirm-title" class="mt-1 text-lg font-bold uppercase leading-snug break-words">
+              <template v-if="selectedCandidate.order">{{ selectedCandidate.order }}. </template>{{ selectedCandidate.name }}
+            </h3>
+            <p class="mt-2 text-sm text-white/70">Suara yang sudah dikirim tidak bisa diubah.</p>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+              <button type="button" class="py-3 rounded-xl border border-white/20 hover:bg-white/10 font-semibold transition" @click="answerConfirm(false)">
+                Batal
+              </button>
+              <button
+                ref="confirmBtn"
+                type="button"
+                class="py-3 rounded-xl bg-[#00BF08] hover:bg-[#13d11c] text-white font-semibold transition"
+                @click="answerConfirm(true)"
+              >
+                Ya, kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- MODAL VISI & MISI -->
     <Teleport to="body">
       <div
@@ -271,11 +343,9 @@
 </template>
 
 <script setup>
-import { AppAlertConfirm, AppAlertSuccess, AppAlertError } from "#components";
-
 useHead({ title: "Vote" });
 
-const alertStore = useAlertsStore();
+const toast = useToast();
 const authStore = useAuthStore();
 const { authenticated } = storeToRefs(authStore);
 const { settings } = storeToRefs(useMySettingsStore());
@@ -354,6 +424,26 @@ const selectedCandidate = computed(() => candidateList.value.find((c) => c.id ==
 const detail = ref(null);
 const voteLoading = ref(false);
 
+// Konfirmasi memilih memakai modal sendiri (bukan confirm() / modal generik).
+const confirming = ref(false);
+const confirmBtn = ref(null);
+let confirmResolve = null;
+function askConfirm() {
+  confirming.value = true;
+  nextTick(() => confirmBtn.value?.focus());
+  return new Promise((res) => (confirmResolve = res));
+}
+function answerConfirm(ok) {
+  confirming.value = false;
+  confirmResolve?.(ok);
+  confirmResolve = null;
+}
+function onKey(e) {
+  if (e.key !== "Escape") return;
+  if (confirming.value) answerConfirm(false);
+  else if (detail.value) detail.value = null;
+}
+
 const onImageError = (e) => (e.target.src = "/img/logo/himasif-white.png");
 
 function openLogin() {
@@ -364,6 +454,7 @@ function openLogin() {
 let timer;
 let lastRefresh = 0;
 onMounted(async () => {
+  window.addEventListener("keydown", onKey);
   await refreshElection(); // server_time segar untuk offset jam di browser
   await loadVoter();
   timer = setInterval(async () => {
@@ -376,7 +467,10 @@ onMounted(async () => {
     }
   }, 1000);
 });
-onBeforeUnmount(() => clearInterval(timer));
+onBeforeUnmount(() => {
+  clearInterval(timer);
+  window.removeEventListener("keydown", onKey);
+});
 
 // Masuk dari navbar → muat status pemilih; keluar → bersihkan.
 watch(authenticated, (v) => {
@@ -397,14 +491,7 @@ function showReceipt(r) {
 
 const submitVote = async () => {
   if (!selectedCandidate.value || !canVote.value || voteLoading.value) return;
-  try {
-    await alertStore.openModal({
-      component: markRaw(AppAlertConfirm),
-      props: { text: `Yakin memilih ${selectedCandidate.value.name}? Suara tidak bisa diubah.` },
-    });
-  } catch {
-    return; // dibatalkan
-  }
+  if (!(await askConfirm())) return;
 
   voteLoading.value = true;
   const id = election.value.id;
@@ -415,11 +502,12 @@ const submitVote = async () => {
       body: { candidate_id: selectedCandidate.value.id },
     });
     showReceipt(res.data);
-    alertStore.openModal({ component: markRaw(AppAlertSuccess), props: { text: "Suaramu sudah tercatat" } });
+    toast.success("Suaramu sudah tercatat", "Terima kasih sudah ikut memilih.");
   } catch (e) {
     const err = apiError(e);
     if (err.code === "already_voted" && err.body?.receipt_code) {
       showReceipt({ receipt_code: err.body.receipt_code, recorded_at: err.body.recorded_at });
+      toast.info("Kamu sudah memilih sebelumnya", "Ini bukti suaramu.");
       return;
     }
     if (err.status === 0) {
@@ -432,9 +520,122 @@ const submitVote = async () => {
       err.message = "Sesi berakhir, silakan masuk lagi.";
     }
     if (err.status === 423) await refreshElection();
-    alertStore.openModal({ component: markRaw(AppAlertError), props: { text: err.message } });
+    toast.error("Suara belum terkirim", err.message);
   } finally {
     voteLoading.value = false;
   }
 };
 </script>
+
+<style scoped>
+/* Kartu calon: maju halus saat hover, "pop" saat dipilih, kilau cahaya berulang pada yang terpilih. */
+.vote-card {
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 300ms ease;
+  will-change: transform;
+}
+@media (hover: hover) {
+  .vote-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 22px 44px -18px rgba(0, 0, 0, 0.85);
+  }
+}
+.vote-card.is-selected {
+  transform: translateY(-8px) scale(1.04);
+  box-shadow:
+    0 28px 56px -18px rgba(0, 0, 0, 0.9),
+    0 0 36px -6px rgba(59, 197, 65, 0.45);
+  animation: vote-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+@keyframes vote-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  55% {
+    transform: translateY(-10px) scale(1.065);
+  }
+  100% {
+    transform: translateY(-8px) scale(1.04);
+  }
+}
+.vote-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.vote-sweep::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 35%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.08) 65%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-160%) skewX(-18deg);
+  animation: vote-sweep 2.8s cubic-bezier(0.45, 0, 0.25, 1) 0.45s infinite;
+}
+@keyframes vote-sweep {
+  0% {
+    transform: translateX(-160%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(360%) skewX(-18deg);
+  }
+}
+
+/* Modal konfirmasi */
+.vc-enter-active,
+.vc-leave-active {
+  transition: opacity 280ms ease;
+}
+.vc-enter-active .vc-panel,
+.vc-leave-active .vc-panel {
+  transition:
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 280ms ease;
+}
+.vc-enter-from,
+.vc-leave-to {
+  opacity: 0;
+}
+.vc-enter-from .vc-panel,
+.vc-leave-to .vc-panel {
+  transform: translateY(24px) scale(0.97);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-card,
+  .vote-card.is-selected,
+  .vc-enter-active .vc-panel,
+  .vc-leave-active .vc-panel {
+    animation: none;
+    transition:
+      border-color 150ms linear,
+      opacity 150ms linear;
+  }
+  .vote-card:hover,
+  .vote-card.is-selected,
+  .vc-enter-from .vc-panel,
+  .vc-leave-to .vc-panel {
+    transform: none;
+  }
+  .vote-sweep {
+    display: none;
+  }
+}
+</style>
