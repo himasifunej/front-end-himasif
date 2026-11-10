@@ -8,6 +8,10 @@ export default defineNuxtConfig({
     beApiKey: "",
     beApiBase: process.env.API_BASE_URL || "https://v2.himasif.id/api",
     beProxySecret: "",
+    public: {
+      // /app/vote?preview-reveal=1 hanya untuk staging/preview/lokal, tidak pernah di production.
+      revealPreview: process.env.VERCEL_ENV !== "production",
+    },
   },
 
   router: {
