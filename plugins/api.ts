@@ -1,11 +1,15 @@
-export default defineNuxtPlugin((nuxtApp) => {
-  const config = useRuntimeConfig();
+// Semua panggilan ke BE lewat proxy server Nuxt (/api/be/...).
+// x-api-key ditambahkan di server (server/api/be/[...path].ts) dari
+// runtimeConfig privat, jadi tidak ada di bundle JS publik.
+export default defineNuxtPlugin(() => {
+  // Saat SSR, teruskan IP pengunjung ke proxy supaya rate limit BE tetap per IP.
+  const forwarded = import.meta.server
+    ? useRequestHeaders(["x-forwarded-for", "x-real-ip"])
+    : {};
+
   const $api = $fetch.create({
-    baseURL: config.public.API_BASE,
-    headers: {
-      "Accept": "application/json",
-      "x-api-key": "909ec9ce33dc2513ba86b0892c48d0"
-    },
+    baseURL: "/api/be",
+    headers: forwarded,
   });
 
   return {
