@@ -9,7 +9,8 @@
   "climax": 11.169,
   "tail_fade": [15.0, 16.6],
   "cues": {
-    "slit": { "at": 0.12, "dur": 0.809, "on": "beat 1 (0.929): layar putih penuh" },
+    "veil": { "at": 0, "dur": 0.28, "on": "klik: latar gelap memudar masuk" },
+    "rise": { "at": 0.28, "dur": 0.65, "on": "layar putih naik dari bawah (translateY 100%→0, cubic-bezier(.2,0,0,1)), penuh tepat di beat 1 (0.929)" },
     "light": { "at": 1.741, "dur": 1.7, "on": "aksen 1.741: kilau cahaya menyapu" },
     "ketuaIn": { "at": 2.159, "dur": 0.8, "on": "hit kuat 2.159 (5.11): KETUA UMUM dibuka wipe" },
     "ketuaOut": { "at": 5.178, "dur": 0.45, "on": "beat 5.178: KETUA UMUM ditutup wipe" },
