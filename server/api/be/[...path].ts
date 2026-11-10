@@ -36,6 +36,8 @@ const ALLOWLIST: Rule[] = [
   { methods: ["POST"], pattern: /^login$/ },
   { methods: ["POST"], pattern: /^vote$/ },
   { methods: ["GET"], pattern: /^(vote-status|logout)$/ },
+  // Magic link voting v2 ({{Assumption}}: path final mengikuti docs/handoff/voting-api-v2.md BE)
+  { methods: ["POST"], pattern: /^voting\/magic-login$/ },
 ];
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;

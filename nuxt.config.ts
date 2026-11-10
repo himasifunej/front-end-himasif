@@ -23,6 +23,14 @@ export default defineNuxtConfig({
   // Proxy supaya address bar tetap di himasif.id/paste/{hash}.
   routeRules: {
     "/paste/**": { proxy: "https://v2.himasif.id/paste/**" },
+    // Magic link voting: token ada di URL. Jangan bocor lewat Referer / cache.
+    "/app/vote/masuk": {
+      headers: {
+        "Referrer-Policy": "no-referrer",
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+      },
+    },
   },
 
   modules: [

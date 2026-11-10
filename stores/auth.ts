@@ -7,6 +7,12 @@ interface UserPayloadInterface {
   remember_me: string;
 }
 
+/** Pemilih boleh mengetik NIM saja; BE login memakai email <NIM>@mail.unej.ac.id. */
+export function nimToEmail(input: string): string {
+  const v = String(input || "").trim();
+  return /^\d{8,20}$/.test(v) ? `${v}@mail.unej.ac.id` : v;
+}
+
 export const useAuthStore = defineStore({
   id: "auth",
   state: () => ({
@@ -15,12 +21,22 @@ export const useAuthStore = defineStore({
   }),
   actions: {
 
+    /** Simpan sesi pemilih (dipakai login password dan magic link). */
+    setSession(token: string, user: { username?: string; vote_status?: any } = {}) {
+      const opts = { maxAge: 60 * 60 * 24 * 7, sameSite: "lax" as const, secure: !import.meta.dev };
+      useCookie("token", opts).value = token;
+      useCookie("username", opts).value = user.username || "Pemilih";
+      useCookie("is-vote", opts).value =
+        user.vote_status == 1 || user.vote_status === true ? "true" : "false";
+      this.authenticated = true;
+    },
+
     async authenticateUser({
       email,
       password,
       remember_me,
     }: UserPayloadInterface) {
-      const formData = createFormData({ email, password, remember_me });
+      const formData = createFormData({ email: nimToEmail(email), password, remember_me });
       const {
         data: userData,
         pending,
@@ -31,31 +47,26 @@ export const useAuthStore = defineStore({
       });
       this.loading = pending;
 
-      if (error.value) {
+      if (error.value || !userData.value?.token) {
         this.authenticated = false;
         useAlertsStore().openModal({
           component: AppAlertError,
           props: {
-            text: "Login gagal",
+            text: error.value?.data?.info || userData.value?.info || "Login gagal",
           },
         });
+        return false;
       }
 
-      const token = useCookie("token");
-      const username = useCookie("username");
-      const isVote = useCookie("is-vote");
+      this.setSession(userData.value.token, userData.value.data || {});
 
-      token.value = userData.value.token;
-      username.value = userData.value.data.username;
-      isVote.value = userData.value.data.vote_status == 0 ? 'false' : 'true';
-      
       useAlertsStore().openModal({
         component: AppAlertSuccess,
         props: {
           text: userData.value.info,
         },
       });
-      this.authenticated = true;
+      return true;
     },
 
 

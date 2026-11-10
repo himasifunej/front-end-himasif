@@ -47,11 +47,6 @@
                                 <p>Profil</p>
                             </button>
 
-                            <button type="button" data-modal-target="account-modal" data-modal-toggle="account-modal"
-                                class="w-full bg-card-primary dark:bg-card-primary-dark hover:bg-[#FF6D00] dark:hover:hover:bg-[#FF6D00] active:bg-[#FF7E1D] dark:active:active:bg-[#FF7E1D] px-2 py-1 flex items-center gap-1.5 rounded">
-                                <NuxtImg src="/icon/Iconly/Light/Password.svg" class="invert dark:invert-0" width="12"></NuxtImg>
-                                <p>Akun</p>
-                            </button>
 
                             <div class="w-full border-b border-b-border-primary dark:border-b-border-primary-dark">
                             </div>
@@ -85,7 +80,7 @@
                                     class="relative bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-2xl shadow text-white">
                                     <!-- Modal body -->
                                     <div class="flex">
-                                        <div class="relative w-[275px] h-[275px] flex items-center justify-center">
+                                        <div class="relative w-[275px] h-[275px] hidden md:flex items-center justify-center">
 
                                             <NuxtImg class="absolute rounded-xl" src="/img/background/login-bg.png"
                                                 sizes="300" width="300" height="300">
@@ -100,7 +95,7 @@
                                         </div>
 
 
-                                        <div class="py-[18.5px] pl-6 pr-8 w-[400px]" v-show="!isForgetPassword">
+                                        <div class="py-[18.5px] pl-6 pr-8 w-[calc(100vw-2rem)] max-w-[400px]" v-show="!isForgetPassword">
                                             <div class="flex">
                                                 <h3 class="text-title-4">Masuk</h3>
                                                 <div class="absolute bg-bg-primary border dark:bg-bg-primary-dark border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
@@ -114,11 +109,11 @@
                                             </div>
                                             <form class="" @submit.prevent="login()">
                                                 <div class="space-y-1 mb-2">
-                                                    <label for="email" class="text-deskripsi">Email</label>
-                                                    <input type="email" name="email" id="email" v-model="user.email"
-                                                        autocomplete="email"
+                                                    <label for="email" class="text-deskripsi">NIM atau email UNEJ</label>
+                                                    <input type="text" name="email" id="email" v-model="user.email"
+                                                        autocomplete="username" inputmode="email" autocapitalize="off"
                                                         class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="E-mail" required>
+                                                        placeholder="222410101xxx atau NIM@mail.unej.ac.id" required>
                                                 </div>
 
                                                 <label for="password" class="text-deskripsi">Password</label>
@@ -172,47 +167,19 @@
                                             </form>
                                         </div>
 
-                                        <div class="py-[18.5px] pl-6 pr-8 w-[400px]" v-show="isForgetPassword">
-                                            <div class="mb-4">
-                                                <div>
-                                                    <h3 class="text-title-4 mb-4">Ops! Lupa Password</h3>
-                                                    <div class="absolute bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
-                                                        data-modal-hide="authentication-modal"
-                                                        @click="isForgetPassword = false">
-                                                        <svg width="20px" height="20px" fill="#fff"
-                                                            viewBox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg"
-                                                            class="cf-icon-svg">
-                                                            <path
-                                                                d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                                <p
-                                                    class="text-deskripsi text-text-secondary dark:text-text-secondary-dark">
-                                                    Jangan khawatir!
-                                                    Kami siap
-                                                    membantu kamu.
-                                                    Cukup masukkan alamat email
-                                                    yang terdaftar, dan
-                                                    kami akan mengirimkan petunjuk untuk mengatur ulang password kamu.
-                                                </p>
+                                        <div class="py-[18.5px] pl-6 pr-8 w-[calc(100vw-2rem)] max-w-[400px]" v-show="isForgetPassword">
+                                            <h3 class="text-title-4 mb-4 pr-10">Lupa password?</h3>
+                                            <div class="absolute bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
+                                                data-modal-hide="authentication-modal" @click="isForgetPassword = false">
+                                                <svg width="20px" height="20px" fill="#fff" viewBox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
+                                                    <path d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
+                                                </svg>
                                             </div>
-                                            <form class="" @submit.prevent="recover()">
-                                                <div class="space-y-1 mb-4">
-                                                    <label for="recovery-email" class="text-deskripsi">Email</label>
-                                                    <input type="email" name="email" id="recovery-email"
-                                                        v-model="userRecoveryEmail" autocomplete="email"
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="Masukan alamat emailmu" required>
-                                                </div>
-
-                                                <div class="flex">
-                                                    <AppButtonPrimary type="submit" :disabled="userRecoveryEmail == ''"
-                                                        data-modal-hide="authentication-modal">Kirimkan link pemulihan
-                                                        password
-                                                    </AppButtonPrimary>
-                                                </div>
-                                            </form>
+                                            <div class="space-y-3 text-deskripsi text-text-secondary dark:text-text-secondary-dark">
+                                                <p>Untuk voting, masuk lewat <span class="text-text-primary dark:text-text-primary-dark">tautan masuk di email voting</span> yang dikirim ke email UNEJ kamu. Tidak perlu password.</p>
+                                                <p>Tautan hilang atau kedaluwarsa? Hubungi panitia lewat Instagram <a href="https://www.instagram.com/himasif/" target="_blank" rel="noopener" class="text-[#FF6D00] underline">@himasif</a> untuk dikirim ulang.</p>
+                                            </div>
+                                            <button type="button" @click="isForgetPassword = false" class="mt-4 text-deskripsi text-text-secondary dark:text-text-secondary-dark underline">Kembali ke form masuk</button>
                                         </div>
 
                                     </div>
@@ -318,135 +285,6 @@
                                                     </AppButtonPrimary>
                                                 </div>
 
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-
-
-                        <div id="account-modal" tabindex="-1" aria-hidden="true" v-if="authenticated"
-                            data-modal-backdrop="static"
-                            class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center md:inset-0 h-screen bg-black/80">
-                            <div class="relative p-4 w-fit max-h-full">
-                                <!-- Modal content -->
-                                <div
-                                    class="relative bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-2xl shadow text-text-primary dark:text-text-primary-dark">
-                                    <!-- Modal body -->
-                                    <div>
-
-                                        <div class="relative w-[300px] h-fit">
-                                            <div
-                                                class="w-full h-full rounded-t-2xl bg-gradient-to-b from-bg-primary/0 to-bg-primary dark:from-bg-primary-dark/0 dark:to-bg-primary-dark absolute top-0 z-10">
-                                            </div>
-
-                                            <NuxtImg class="rounded-t-2xl absolute z-0 top-0 left-0 w-full h-full"
-                                                src="/img/background/profile-bg.png" sizes="300" width="300"
-                                                height="300">
-                                            </NuxtImg>
-
-                                            <div class="absolute bg-bg-primary border dark:bg-bg-primary-dark border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer z-20"
-                                                data-modal-hide="account-modal">
-                                                <svg width="20px" height="20px" fill="#fff" viewBox="-3.5 0 19 19"
-                                                    xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
-                                                    <path
-                                                        d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
-                                                </svg>
-                                            </div>
-
-                                            <div class="relative z-10 pt-4 space-y-4">
-                                                <h3 class="text-title-4 w-full text-center">Akun</h3>
-
-                                                <div
-                                                    class="w-24 h-24 text-[50px] leading-[50px] mx-auto rounded-full border border-border-primary dark:border-border-primary-dark flex items-center justify-center text-center bg-card-primary dark:bg-card-primary-dark text-text-primary dark:text-text-primary-dark">
-                                                    {{ getUsernameInitial }}
-                                                </div>
-
-                                                <div class="text-center space-y-2">
-                                                    <h5
-                                                        class="text-text-primary dark:text-text-primary-dark text-title-5">
-                                                        {{ username }}
-                                                    </h5>
-                                                    <p
-                                                        class="text-text-secondary dark:text-text-secondary-dark text-deskripsi">
-                                                        {{ user.email }}</p>
-
-
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-
-                                        <div class="py-[18.5px] pl-6 pr-8">
-
-
-                                            <form class="" @submit.prevent="handleAuthUpdatePassword()"
-                                                v-if="!isEditPassword">
-                                                <div class="space-y-1 mb-2">
-                                                    <label for="email" class="text-deskripsi">Email</label>
-                                                    <input type="email" name="email" id="email" v-model="user.email"
-                                                        autocomplete="email" disabled
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="E-mail" required>
-                                                </div>
-
-                                                <div class="space-y-1 mb-2">
-                                                    <label for="account-update-password"
-                                                        class="text-deskripsi">Password</label>
-                                                    <input type="password" name="account-update-password"
-                                                        id="account-update-password" v-model="userEdit.oldPassword"
-                                                        autocomplete="password"
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="Password" required>
-                                                </div>
-
-                                                <div class="flex mt-8">
-                                                    <AppButtonPrimary type="submit" class="mx-auto"
-                                                        :disabled="user.email == '' || user.password == ''"
-                                                        data-modal-hide="authentication-modal">Ubah Password
-                                                    </AppButtonPrimary>
-                                                </div>
-                                            </form>
-
-                                            <form @submit.prevent="handleUpdatePassword()" v-if="isEditPassword">
-                                                <div class="space-y-1 mb-2">
-                                                    <label for="account-update-password-old"
-                                                        class="text-deskripsi">Password Lama</label>
-                                                    <input type="password" name="account-update-password-old"
-                                                        id="account-update-password-old" v-model="userEdit.oldPassword"
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="Password lama" required>
-                                                </div>
-
-                                                <div class="space-y-1 mb-2">
-                                                    <label for="account-update-password-new"
-                                                        class="text-deskripsi">Password Baru</label>
-                                                    <input type="password" name="account-update-password-new"
-                                                        id="account-update-password-new" v-model="userEdit.newPassword"
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="Password baru" required>
-                                                </div>
-
-                                                <div class="space-y-1 mb-2">
-                                                    <label for="account-update-password-new-confirm"
-                                                        class="text-deskripsi">Konfirmasi
-                                                        Password Baru</label>
-                                                    <input type="password" name="account-update-password-new-confirm"
-                                                        id="account-update-password-new-confirm"
-                                                        v-model="userEdit.newPasswordConfirm"
-                                                        class="border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark placeholder:text-text-placeholder dark:placeholder:text-text-placeholder-dark text-deskripsi rounded-lg focus:ring-border-primary dark:focus:ring-border-primary-dark focus:border-border-primary dark:focus:border-border-primary-dark block w-full py-2 px-[10px] "
-                                                        placeholder="Konfirmasi password baru" required>
-                                                </div>
-
-                                                <div class="flex mt-8">
-                                                    <AppButtonPrimary type="submit" class="mx-auto"
-                                                        :disabled="userEdit.oldPassword == '' || userEdit.newPassword == '' || userEdit.newPasswordConfirm == ''"
-                                                        data-modal-hide="authentication-modal">Ubah Password
-                                                    </AppButtonPrimary>
-                                                </div>
                                             </form>
                                         </div>
                                     </div>
@@ -596,8 +434,8 @@ const { isDarkMode, changeToDark, changeToLight } = useDarkMode();
 
 const isForgetPassword = ref(false)
 const isEditProfile = ref(false)
-const isEditPassword = ref(false)
-const userRecoveryEmail = ref('')
+
+
 const isOpen = ref(false)
 
 const { authenticateUser, logUserOut } = useAuthStore()
@@ -611,11 +449,6 @@ const user = ref({
     remember_me: 0
 })
 
-const userEdit = ref({
-    oldPassword: '',
-    newPassword: '',
-    newPasswordConfirm: ''
-})
 
 const username = ref(useCookie('username').value)
 const navbarStore = useNavbarStore()
@@ -659,37 +492,8 @@ const updateProfile = async () => {
     isEditProfile.value = false
 }
 
-const handleAuthUpdatePassword = async () => {
 
-    if (userEdit.value.oldPassword == user.value.password) {
-        userEdit.value.oldPassword = ''
-        isEditPassword.value = true
-    } else {
-        alertStore.openModal({
-            component: markRaw(AppAlertError),
-            props: {
-                text: "Password tidak sesuai"
-            }
-        })
-    }
-}
 
-const handleUpdatePassword = async () => {
-    //await
-
-    alertStore.openModal({
-        component: markRaw(AppAlertSuccess),
-        props: {
-            text: "Sukses Edit Password"
-        }
-    })
-
-    isEditPassword.value = false
-}
-
-const recover = async () => {
-
-}
 
 const logout = async () => {
     await logUserOut()
