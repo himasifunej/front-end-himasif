@@ -302,6 +302,7 @@
 
     <!-- PERKENALAN + VISI & MISI CALON (satu modal): perkenalan sekali per calon, bisa dilewati -->
     <Teleport to="body">
+      <Transition :name="introTransition">
       <LazyVoteIntro
         v-if="introFor"
         :key="introFor.id"
@@ -310,16 +311,21 @@
         :photo="candidatePhoto(introFor)"
         :video-src="introFor.intro?.video_url || ''"
         :reduced="reducedMotion"
-        :start-done="!!introSeen[introFor.id] || introVisi"
+        :start-done="!!introSeen[introFor.id] || introVisi || !!introNavFrom"
         :focus-visi="introVisi"
         :can-pick="canVote"
         :pick-hint="pickHint"
         :count="candidateList.length"
+        :prev="introNeighbor(-1)"
+        :next="introNeighbor(1)"
+        :nav-from="introNavFrom"
         @played="(id) => (introSeen[id] = true)"
         @close="closeIntro"
         @pick="pickFromIntro"
         @number="selectByNumber"
+        @nav="navIntro"
       />
+      </Transition>
     </Teleport>
 
     <!-- KONFIRMASI PILIHAN: ringkasan + klik terpisah "Kirim pilihan" (insiden 13 Nov: ketukan ganda/Enter kedua) -->
@@ -497,13 +503,36 @@ const pickHint = computed(() => {
 });
 function openIntro(c, ev, visi = false) {
   introOrigin = ev?.currentTarget || null;
+  introNavFrom.value = "";
   introVisi.value = visi;
   introFor.value = c;
 }
 function closeIntro() {
+  introNavFrom.value = ""; // tutup tanpa animasi geser
   introFor.value = null;
   introVisi.value = false;
   nextTick(() => introOrigin?.focus());
+}
+// Pindah calon di dalam modal (panah, ←/→, geser). Berputar 3 → 1. HANYA mengganti calon yang ditampilkan:
+// tidak menyentuh `selected`, tidak membuka ringkasan, tidak mengirim apa pun.
+const introNavFrom = ref("");
+const introTransition = computed(() =>
+  !introNavFrom.value ? "intro-open" : reducedMotion.value ? "intro-fade" : `intro-${introNavFrom.value}`,
+);
+function introNeighbor(dir) {
+  const list = candidateList.value;
+  const j = neighborIndex(list.length, list.indexOf(introFor.value), dir);
+  return j < 0 ? null : list[j];
+}
+function navIntro(dir) {
+  const list = candidateList.value;
+  const j = neighborIndex(list.length, list.indexOf(introFor.value), dir);
+  if (j < 0) return;
+  introNavFrom.value = dir > 0 ? "next" : "prev";
+  introVisi.value = false;
+  introFor.value = list[j];
+  // saat ditutup, fokus kembali ke kartu calon yang terakhir dilihat
+  introOrigin = document.querySelectorAll(".vote-card")[j]?.querySelector("button") || introOrigin;
 }
 function pickFromIntro(c) {
   selected.value = c.id;

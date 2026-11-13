@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -104,4 +104,34 @@ test("voterScreen: tidak berhak → alasan; status belum dimuat → loading; bel
 });
 test("AFTER_LOGIN_PATH menuju halaman voting", () => {
   assert.equal(AFTER_LOGIN_PATH, "/app/vote");
+});
+
+// Navigasi antar-calon di modal (permintaan owner 14 Nov): berputar, tidak pernah memilih/mengirim.
+test("neighborIndex: berputar 3 → 1 dan 1 → 3; tanpa calon lain → -1", () => {
+  assert.equal(neighborIndex(3, 2, 1), 0);
+  assert.equal(neighborIndex(3, 0, -1), 2);
+  assert.equal(neighborIndex(3, 1, 1), 2);
+  assert.equal(neighborIndex(1, 0, 1), -1);
+  assert.equal(neighborIndex(3, 5, 1), -1);
+});
+test("navKeyDir: hanya ←/→ baru; auto-repeat, modifier, Enter, angka → 0", () => {
+  assert.equal(navKeyDir({ key: "ArrowRight" }), 1);
+  assert.equal(navKeyDir({ key: "ArrowLeft" }), -1);
+  assert.equal(navKeyDir({ key: "ArrowRight", repeat: true }), 0);
+  assert.equal(navKeyDir({ key: "ArrowLeft", altKey: true }), 0);
+  assert.equal(navKeyDir({ key: "Enter" }), 0);
+  assert.equal(navKeyDir({ key: "2" }), 0);
+});
+test("swipeDir: geser kiri → berikutnya, kanan → sebelumnya; gulir vertikal/pendek/lambat → 0", () => {
+  assert.equal(swipeDir(-120, 10, 200), 1);
+  assert.equal(swipeDir(120, 10, 200), -1);
+  assert.equal(swipeDir(-40, 0, 100), 0);
+  assert.equal(swipeDir(-100, 90, 200), 0);
+  assert.equal(swipeDir(-200, 0, 1200), 0);
+});
+test("enterMayPick: Enter ditahan / terbawa setelah pindah calon tidak memilih", () => {
+  assert.equal(enterMayPick({ repeat: true }, 0, 5000, false), false, "auto-repeat tidak pernah memilih");
+  assert.equal(enterMayPick({}, 1000, 1200, true), false, "200 ms setelah pindah calon: ditolak");
+  assert.equal(enterMayPick({}, 1000, 1600, true), true, "Enter baru setelah 500 ms: boleh memilih calon yang tampil");
+  assert.equal(enterMayPick({}, 1000, 1001, false), true, "dibuka langsung (bukan pindah): perilaku lama");
 });

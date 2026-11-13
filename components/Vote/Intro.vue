@@ -7,8 +7,34 @@
     :aria-label="`Calon nomor ${candidate.order}, ${candidate.name}`"
     @click.self="onBackdrop"
   >
+    <div class="intro-frame relative w-full h-full sm:h-auto sm:w-[560px] lg:w-[960px]">
+    <!-- Panah calon lain: DI LUAR kartu, di tengah tepi kiri/kanan (tablet & desktop). Navigasi tidak pernah memilih. -->
+    <template v-if="prev && next">
+      <button
+        ref="navPrevOut"
+        type="button"
+        class="intro-nav intro-nav-out intro-nav-prev hidden sm:inline-flex"
+        :aria-label="`Calon sebelumnya: nomor ${prev.order}, ${prev.name}`"
+        @click="go(-1)"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        <span class="intro-tip" aria-hidden="true">{{ prev.order }}. {{ prev.name }}</span>
+      </button>
+      <button
+        ref="navNextOut"
+        type="button"
+        class="intro-nav intro-nav-out intro-nav-next hidden sm:inline-flex"
+        :aria-label="`Calon berikutnya: nomor ${next.order}, ${next.name}`"
+        @click="go(1)"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+        <span class="intro-tip" aria-hidden="true">{{ next.order }}. {{ next.name }}</span>
+      </button>
+    </template>
     <div
-      class="intro-panel w-full h-full sm:h-auto sm:max-h-[92vh] sm:w-[560px] lg:w-[960px] overflow-y-auto lg:overflow-hidden bg-bg-primary-dark sm:bg-card-primary-dark sm:border sm:border-border-primary-dark sm:rounded-lg text-text-primary-dark flex flex-col lg:flex-row"
+      class="intro-panel w-full h-full sm:h-auto sm:max-h-[92vh] overflow-y-auto lg:overflow-hidden bg-bg-primary-dark sm:bg-card-primary-dark sm:border sm:border-border-primary-dark sm:rounded-lg text-text-primary-dark flex flex-col lg:flex-row"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
     >
       <!-- Panggung (media perkenalan) -->
       <div class="p-4 sm:p-6 lg:pr-0 flex flex-col gap-3 lg:w-[432px] lg:shrink-0">
@@ -57,6 +83,15 @@
             <text ref="numText" x="50" y="112" text-anchor="middle">{{ candidate.order }}</text>
           </svg>
           <p v-if="waiting" class="absolute left-3 bottom-3 text-xs text-white/70" aria-hidden="true">Memuat video…</p>
+          <!-- Panah di HP: di dalam tepi kartu (geser kiri/kanan juga bisa) -->
+          <template v-if="prev && next">
+            <button ref="navPrevIn" type="button" class="intro-nav intro-nav-in left-2 inline-flex sm:hidden" :aria-label="`Calon sebelumnya: nomor ${prev.order}, ${prev.name}`" @click="go(-1)">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <button ref="navNextIn" type="button" class="intro-nav intro-nav-in right-2 inline-flex sm:hidden" :aria-label="`Calon berikutnya: nomor ${next.order}, ${next.name}`" @click="go(1)">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+          </template>
         </div>
 
         <!-- Nama + aksi (HP & tablet). Selalu terlihat & bisa dipakai selama perkenalan berjalan. -->
@@ -103,10 +138,11 @@
           <button v-if="canPick" ref="pickB" type="button" class="intro-pick" @click="pick">Pilih calon ini</button>
           <p v-else class="text-sm text-text-secondary-dark">{{ pickHint }}</p>
           <p class="text-xs text-text-secondary-dark">
-            <template v-if="canPick">Enter: pilih calon ini · 1–{{ count }}: pilih calon lain · </template>Esc: {{ done ? "tutup" : "lewati" }}
+            <template v-if="prev && next">←/→: lihat calon lain · </template><template v-if="canPick">Enter: pilih calon ini · 1–{{ count }}: pilih nomor itu · </template>Esc: {{ done ? "tutup" : "lewati" }}
           </p>
         </div>
       </div>
+    </div>
     </div>
     <p class="sr-only" aria-live="polite">{{ done ? `Calon nomor ${candidate.order}, ${candidate.name}.` : "" }}</p>
   </div>
@@ -136,8 +172,11 @@ const props = defineProps({
   canPick: { type: Boolean, default: false },
   pickHint: { type: String, default: "" },
   count: { type: Number, default: 3 },
+  prev: { type: Object, default: null }, // calon sebelumnya / berikutnya (berputar); null bila hanya satu calon
+  next: { type: Object, default: null },
+  navFrom: { type: String, default: "" }, // "next" | "prev" bila modal ini tampil karena pindah calon
 });
-const emit = defineEmits(["close", "pick", "played", "number"]);
+const emit = defineEmits(["close", "pick", "played", "number", "nav"]);
 
 const DEFAULT_T = {
   video_end: 6000, dim: [4600, 5600], number_draw: [4700, 5600], number_fill: [5500, 5950], burst_start: 6000, burst_step: 200,
@@ -155,6 +194,9 @@ const yy = computed(() => String(props.candidate.year_of_study || "").slice(-2))
 const root = ref(null), stage = ref(null), vid = ref(null), dim = ref(null), official = ref(null), flash = ref(null);
 const num = ref(null), numText = ref(null), progA = ref(null), progB = ref(null), visiMisi = ref(null);
 const skipA = ref(null), skipB = ref(null), pickA = ref(null), pickB = ref(null);
+const navPrevOut = ref(null), navNextOut = ref(null), navPrevIn = ref(null), navNextIn = ref(null);
+const isSmUp = () => window.matchMedia("(min-width: 640px)").matches;
+let shownAt = 0;
 const frameEls = [];
 const done = ref(false);
 const waiting = ref(false);
@@ -287,6 +329,7 @@ function pickButton() {
 function finish() {
   done.value = true;
   emit("played", props.candidate.id);
+  if (props.navFrom) return; // setelah pindah calon fokus di panah, BUKAN di "Pilih calon ini"
   const a = document.activeElement;
   if (!a || a === skipA.value || a === skipB.value || a === document.body) nextTick(() => (pickButton() || (isDesktop() ? skipB.value : skipA.value))?.focus());
 }
@@ -335,6 +378,26 @@ function onSkip() {
   if (done.value) emit("close");
   else skip();
 }
+/** Pindah ke calon lain. HANYA navigasi: tidak memilih, tidak mengirim. */
+function go(dir) {
+  if (!(dir > 0 ? props.next : props.prev)) return;
+  vid.value?.pause();
+  emit("nav", dir);
+}
+function navButton(dir) {
+  return isSmUp() ? (dir > 0 ? navNextOut.value : navPrevOut.value) : dir > 0 ? navNextIn.value : navPrevIn.value;
+}
+let touch = null;
+function onTouchStart(e) {
+  touch = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() } : null;
+}
+function onTouchEnd(e) {
+  if (!touch || !e.changedTouches.length) return;
+  const c = e.changedTouches[0];
+  const d = swipeDir(c.clientX - touch.x, c.clientY - touch.y, performance.now() - touch.t);
+  touch = null;
+  if (d) go(d);
+}
 function onBackdrop() {
   if (done.value) emit("close");
 }
@@ -342,6 +405,16 @@ function onKey(e) {
   if (e.key === "Escape") {
     e.preventDefault();
     onSkip();
+    return;
+  }
+  const nd = navKeyDir(e);
+  if (nd) {
+    e.preventDefault();
+    go(nd);
+    return;
+  }
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    if (e.repeat) e.preventDefault(); // panah yang ditahan tidak memutar calon terus-menerus
     return;
   }
   if (/^[1-9]$/.test(e.key) && !e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -354,6 +427,8 @@ function onKey(e) {
     // Enter di tombol lain (Lewati/Putar ulang) tetap menjalankan tombol itu
     if (!a || a.tagName !== "BUTTON" || a === pickA.value || a === pickB.value) {
       e.preventDefault();
+      // Enter yang ditahan, atau terbawa dari panah sesaat setelah pindah calon, tidak memilih
+      if (!enterMayPick(e, shownAt, performance.now(), !!props.navFrom)) return;
       pick();
     }
     return;
@@ -368,12 +443,16 @@ function onKey(e) {
 }
 
 onMounted(() => {
+  shownAt = performance.now();
   window.addEventListener("keydown", onKey);
   document.documentElement.style.overflow = "hidden";
   if (props.startDone) {
     skip();
     nextTick(() => {
-      if (props.focusVisi && visiMisi.value) {
+      if (props.navFrom) {
+        // tetap di panah yang sama: Enter/Spasi berikutnya hanya pindah calon lagi, tidak pernah memilih
+        (navButton(props.navFrom === "prev" ? -1 : 1) || root.value)?.focus({ preventScroll: true });
+      } else if (props.focusVisi && visiMisi.value) {
         visiMisi.value.scrollIntoView({ block: "start" });
         visiMisi.value.focus({ preventScroll: true });
       } else {
@@ -473,6 +552,84 @@ onBeforeUnmount(() => {
   outline: 2px solid #ff6d00;
   outline-offset: 2px;
 }
+.intro-nav {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 1px solid #494949;
+  background: rgba(26, 26, 26, 0.9);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.intro-nav:hover,
+.intro-nav:focus-visible {
+  background: #ff6d00;
+  border-color: #ff6d00;
+  color: #000;
+}
+.intro-nav:focus-visible {
+  outline: 2px solid #ff6d00;
+  outline-offset: 3px;
+}
+/* di luar kartu; bila layar terlalu sempit, menempel di dalam tepi kartu */
+.intro-nav-out {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.intro-nav-prev {
+  right: calc(100% + min(16px, (100vw - 100%) / 2 - 56px));
+}
+.intro-nav-next {
+  left: calc(100% + min(16px, (100vw - 100%) / 2 - 56px));
+}
+.intro-nav-in {
+  position: absolute;
+  top: 50%;
+  margin-top: -22px;
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.25);
+  z-index: 3;
+}
+.intro-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 220px;
+  width: max-content;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #1a1a1a;
+  border: 1px solid #494949;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+/* tooltip menjorok ke arah kartu supaya tidak terpotong di tepi layar */
+.intro-nav-prev .intro-tip {
+  left: 0;
+  transform: none;
+}
+.intro-nav-next .intro-tip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.intro-nav:hover .intro-tip,
+.intro-nav:focus-visible .intro-tip {
+  opacity: 1;
+}
 .intro-rich :deep(ol) {
   list-style: decimal;
   padding-left: 1.25rem;
@@ -484,5 +641,68 @@ onBeforeUnmount(() => {
 .intro-rich :deep(p + p),
 .intro-rich :deep(li + li) {
   margin-top: 0.35rem;
+}
+</style>
+
+<style>
+/* Pindah calon: kartu bergeser searah navigasi (300 ms). Latar tetap; panah kartu lama langsung disembunyikan. */
+.intro-next-enter-active,
+.intro-next-leave-active,
+.intro-prev-enter-active,
+.intro-prev-leave-active {
+  transition: background-color 300ms ease;
+}
+.intro-fade-enter-active,
+.intro-fade-leave-active {
+  transition: background-color 150ms linear;
+}
+.intro-next-leave-active,
+.intro-prev-leave-active,
+.intro-fade-leave-active {
+  z-index: 49;
+  pointer-events: none;
+}
+.intro-next-leave-to,
+.intro-prev-leave-to,
+.intro-fade-leave-to {
+  background-color: transparent;
+}
+.intro-next-leave-active .intro-nav,
+.intro-prev-leave-active .intro-nav,
+.intro-fade-leave-active .intro-nav {
+  visibility: hidden;
+}
+.intro-next-enter-active .intro-panel,
+.intro-next-leave-active .intro-panel,
+.intro-prev-enter-active .intro-panel,
+.intro-prev-leave-active .intro-panel {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 300ms ease;
+}
+.intro-next-enter-from .intro-panel,
+.intro-prev-leave-to .intro-panel {
+  transform: translateX(24%);
+  opacity: 0;
+}
+.intro-next-leave-to .intro-panel,
+.intro-prev-enter-from .intro-panel {
+  transform: translateX(-24%);
+  opacity: 0;
+}
+/* gerak dikurangi: hanya memudar */
+.intro-fade-enter-active .intro-panel,
+.intro-fade-leave-active .intro-panel {
+  transition: opacity 150ms linear;
+}
+.intro-fade-enter-from .intro-panel,
+.intro-fade-leave-to .intro-panel {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-next-enter-from .intro-panel,
+  .intro-next-leave-to .intro-panel,
+  .intro-prev-enter-from .intro-panel,
+  .intro-prev-leave-to .intro-panel {
+    transform: none;
+  }
 }
 </style>
