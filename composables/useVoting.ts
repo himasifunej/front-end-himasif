@@ -54,6 +54,7 @@ export const VOTING_API = {
   login: "/v2/auth/login",
   logout: "/v2/auth/logout",
   me: "/v2/me",
+  confirm: (id: number) => `/v2/elections/${id}/confirm`,
   vote: (id: number) => `/v2/elections/${id}/vote`,
   receipt: (id: number) => `/v2/elections/${id}/receipt`,
 } as const;
@@ -161,4 +162,40 @@ export function loginBody(id: string, password: string) {
 export function voterAuthHeader(): Record<string, string> {
   const t = useCookie("token").value;
   return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+
+/**
+ * Pengaman tombol final "Kirim pilihan" (insiden 13 Nov: ketukan ganda / Enter kedua mengirim suara tanpa niat).
+ * - Semua klik dalam `minMs` sejak dialog terbuka diabaikan.
+ * - Klik mouse/sentuh (event.detail > 0) hanya sah bila pointerdown-nya terjadi di tombol ini SETELAH jeda
+ *   (ketukan kedua dari ketukan ganda, atau klik yang dimulai sebelum dialog muncul, ditolak).
+ * - Klik dari keyboard (detail 0) hanya sah bila ada keydown Enter/Spasi BARU (bukan auto-repeat) di tombol ini
+ *   setelah jeda; Enter yang ditahan/terbawa dari tombol sebelumnya ditolak. Pintasan global tidak pernah mengirim.
+ */
+export function createConfirmGuard(minMs = 500) {
+  let openedAt = Number.NEGATIVE_INFINITY;
+  let pointerArmed = false;
+  let keyArmed: string | null = null;
+  return {
+    open(now: number) {
+      openedAt = now;
+      pointerArmed = false;
+      keyArmed = null;
+    },
+    ready(now: number) {
+      return now - openedAt >= minMs;
+    },
+    pointerDown(now: number) {
+      pointerArmed = now - openedAt >= minMs;
+    },
+    keyDown(e: { key: string; repeat?: boolean }, now: number) {
+      keyArmed = !e.repeat && (e.key === "Enter" || e.key === " ") && now - openedAt >= minMs ? e.key : null;
+    },
+    allowClick(e: { detail?: number }, now: number) {
+      if (now - openedAt < minMs) return false;
+      if ((e.detail ?? 0) > 0) return pointerArmed;
+      return keyArmed !== null;
+    },
+  };
 }

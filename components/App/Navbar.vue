@@ -463,12 +463,15 @@ const userDropdown = ref(null)
 
 
 
+// Sesi bisa dibuat di luar navbar (tautan masuk, form di /app/vote/masuk): ambil ulang nama dari cookie.
+watch(authenticated, (v) => { if (v) username.value = useCookie('username').value })
+
 const getUsernameInitial = computed(() => {
-    return username.value[0]
+    return String(username.value || useCookie('username').value || 'P')[0]
 })
 
 function getFirstName(fullName) {
-    return fullName.split(" ")[0];
+    return String(fullName || useCookie('username').value || 'Pemilih').split(" ")[0];
 }
 
 const login = async () => {

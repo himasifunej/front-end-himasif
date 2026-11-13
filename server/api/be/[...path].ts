@@ -39,7 +39,7 @@ const ALLOWLIST: Rule[] = [
   // Voting v2 (himasif-id-v2-be docs/handoff/voting-api-v2.md)
   { methods: ["GET"], pattern: /^v2\/elections\/(current|\d{1,10})$/ },
   { methods: ["GET"], pattern: /^v2\/elections\/\d{1,10}\/(result|receipt)$/ },
-  { methods: ["POST"], pattern: /^v2\/elections\/\d{1,10}\/vote$/ },
+  { methods: ["POST"], pattern: /^v2\/elections\/\d{1,10}\/(confirm|vote)$/ },
   { methods: ["POST"], pattern: /^v2\/auth\/(magic-link|login|logout)$/ },
   { methods: ["GET"], pattern: /^v2\/me$/ },
 ];
