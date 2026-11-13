@@ -152,6 +152,21 @@ export function clockOffset(serverTime: unknown, receivedAt = Date.now()): numbe
   return d ? d.getTime() - receivedAt : 0;
 }
 
+/** Tujuan setelah login berhasil (navbar, form di /app/vote/masuk, magic link). */
+export const AFTER_LOGIN_PATH = "/app/vote";
+
+/**
+ * Layar yang harus tampil di halaman voting untuk pemilih yang sudah masuk.
+ * ballot = surat suara; voted = "Kamu sudah memilih pada ..."; reason = tidak bisa memilih (alasan tampil);
+ * wait = belum dibuka / sudah ditutup; loading = status pemilih belum dimuat.
+ */
+export function voterScreen(phase: string, voterElection: any, hasReceipt = false): "ballot" | "voted" | "reason" | "wait" | "loading" {
+  if (hasReceipt || voterElection?.has_voted) return "voted";
+  if (phase !== "open") return "wait";
+  if (!voterElection) return "loading";
+  return voterElection.eligible ? "ballot" : "reason";
+}
+
 /** Pemilih boleh mengetik NIM atau email UNEJ. */
 export function loginBody(id: string, password: string) {
   const v = String(id || "").trim();

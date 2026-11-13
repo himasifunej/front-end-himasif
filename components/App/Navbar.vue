@@ -13,7 +13,7 @@
 
                 <div v-if="!authenticated">
                     <AppButtonSecondary v-if="!authenticated" class="text-white"
-                        data-modal-target="authentication-modal" @click="userDropdown.hide()" v-show="!authenticated"
+                        data-modal-target="authentication-modal" @click="hideUserDropdown()" v-show="!authenticated"
                         data-modal-toggle="authentication-modal">
                         Masuk
                     </AppButtonSecondary>
@@ -59,7 +59,7 @@
                         </div>
                     </template>
 
-                    <button type="button" data-modal-target="authentication-modal" @click="userDropdown.hide()"
+                    <button type="button" data-modal-target="authentication-modal" @click="hideUserDropdown()"
                         v-show="!authenticated" data-modal-toggle="authentication-modal"
                         class="flex justify-start items-center text-white gap-[5px] pl-2 py-1 pr-12 bg-card-primary dark:bg-card-primary-dark hover:bg-[#ff6d00] active:bg-[#ff7d1d] rounded">
                         <NuxtImg src="/icon/Iconly/Light/ArrowDown.svg" :alt="'dropdown navbar icon'" width="15"
@@ -439,6 +439,11 @@ const isEditProfile = ref(false)
 const isOpen = ref(false)
 
 const { authenticateUser, logUserOut } = useAuthStore()
+const navRoute = useRoute()
+// Tombol "Masuk" (belum login) dulu memanggil userDropdown.hide() → flowbite melempar galat karena dropdown belum ada.
+function hideUserDropdown() {
+    try { userDropdown.value?.hide?.() } catch (e) {}
+}
 const alertStore = useAlertsStore()
 const { authenticated } = storeToRefs(useAuthStore())
 
@@ -475,11 +480,12 @@ function getFirstName(fullName) {
 }
 
 const login = async () => {
-    await authenticateUser(user.value)
-
-    if (authenticated) {
-        username.value = useCookie('username').value
-    }
+    const ok = await authenticateUser(user.value)
+    if (!ok) return
+    username.value = useCookie('username').value
+    // Login di navbar hanya untuk voting: selalu ke halaman voting, yang menampilkan surat suara,
+    // "Kamu sudah memilih", atau alasan tidak bisa memilih (insiden 13 Nov: berhasil masuk tapi tetap di halaman lama).
+    if (navRoute.path !== AFTER_LOGIN_PATH) await navigateTo(AFTER_LOGIN_PATH)
 }
 
 const updateProfile = async () => {

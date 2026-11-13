@@ -30,7 +30,7 @@
 
           <!-- BUKTI MEMILIH -->
           <section
-            v-if="receipt && (phase === 'open' || phase === 'closed')"
+            v-if="hasVoted && (phase === 'open' || phase === 'closed')"
             class="rounded-2xl border border-[#3BC541]/60 bg-[#00BF08]/15 backdrop-blur-md p-5 md:p-6 flex gap-4 items-start"
             aria-live="polite"
           >
@@ -40,11 +40,11 @@
               </svg>
             </div>
             <div class="space-y-1 flex-1 min-w-0">
-              <h2 class="text-lg md:text-xl font-bold">Suaramu sudah tercatat</h2>
+              <h2 class="text-lg md:text-xl font-bold">Kamu sudah memilih</h2>
               <p class="text-sm md:text-base text-white/80">
-                {{ formatWib(parseWib(receipt.recorded_at)) }}
+                <template v-if="receipt?.recorded_at">pada {{ formatWib(parseWib(receipt.recorded_at)) }}. </template>Suaramu sudah tercatat dan tidak bisa diubah.
               </p>
-              <p class="text-sm">
+              <p v-if="receipt?.receipt_code" class="text-sm">
                 Kode bukti:
                 <span class="font-mono font-bold tracking-wider select-all">{{ receipt.receipt_code }}</span>
               </p>
@@ -471,12 +471,13 @@ const reasonText = computed(() => {
   if (!ve || ve.eligible || ve.has_voted || phase.value !== "open") return "";
   return REASON_TEXT[ve.reason] || "Kamu tidak bisa memilih pada pemilihan ini.";
 });
+// Layar untuk pemilih yang sudah masuk: surat suara / "Kamu sudah memilih" / alasan (lihat voterScreen).
+const screen = computed(() => (authenticated.value ? voterScreen(phase.value, voter.value?.election, !!receipt.value) : "wait"));
+const hasVoted = computed(() => screen.value === "voted");
 const showCandidates = computed(
-  () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !receipt.value,
+  () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !hasVoted.value,
 );
-const canVote = computed(
-  () => phase.value === "open" && authenticated.value && !!voter.value?.election?.eligible && !receipt.value,
-);
+const canVote = computed(() => authenticated.value && screen.value === "ballot");
 
 const selected = ref(null);
 const selectedCandidate = computed(() => candidateList.value.find((c) => c.id === selected.value) || null);
@@ -644,12 +645,24 @@ onBeforeUnmount(() => {
 
 // Masuk dari navbar → muat status pemilih; keluar → bersihkan.
 watch(authenticated, (v) => {
-  if (v) loadVoter();
-  else {
+  if (!v) {
     voter.value = null;
     receipt.value = null;
   }
 });
+// Tiap sesi baru (juga login ulang saat sudah berada di halaman ini): muat ulang status pemilih lalu tampilkan
+// surat suara atau "Kamu sudah memilih". Tidak boleh diam saja.
+watch(
+  () => authStore.sessionVersion,
+  async () => {
+    voter.value = null;
+    receipt.value = null;
+    selected.value = null;
+    if (!election.value) await refreshElection();
+    await loadVoter();
+    if (import.meta.client) window.scrollTo({ top: 0, behavior: "smooth" });
+  },
+);
 
 function showReceipt(r) {
   receipt.value = r;

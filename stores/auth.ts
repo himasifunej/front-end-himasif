@@ -15,6 +15,8 @@ export const useAuthStore = defineStore({
   state: () => ({
     authenticated: false,
     loading: false,
+    /** Naik tiap kali sesi baru dibuat (login/magic link), supaya halaman voting memuat ulang status pemilih. */
+    sessionVersion: 0,
   }),
   actions: {
     /** Simpan sesi pemilih (login NIM+password dan magic link). Kontrak v2: { token, expires_at, voter }. */
@@ -28,6 +30,7 @@ export const useAuthStore = defineStore({
       useCookie("username", opts).value = voter?.name || "Pemilih";
       useCookie("is-vote", opts).value = voter?.election?.has_voted ? "true" : "false";
       this.authenticated = true;
+      this.sessionVersion++;
     },
 
     clearSession() {
