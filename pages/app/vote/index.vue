@@ -227,8 +227,10 @@
                 v-for="c in candidateList"
                 :key="c.id"
                 class="vote-card relative rounded-lg border bg-card-primary-dark overflow-hidden transition-colors"
-                :class="selected === c.id ? 'border-div-mediatek ring-1 ring-div-mediatek' : 'border-border-primary-dark hover:bg-card-hover-dark'"
+                :class="selected === c.id ? 'is-selected border-div-mediatek ring-1 ring-div-mediatek' : 'border-border-primary-dark hover:bg-card-hover-dark'"
               >
+                <!-- kilau cahaya pada kartu yang dipilih (dipulihkan; hilang di d236c6d). Hanya hiasan: tidak bisa diklik. -->
+                <span v-if="selected === c.id" class="vote-sweep" aria-hidden="true"></span>
                 <button
                   type="button"
                   class="w-full text-left flex sm:block"
@@ -743,13 +745,75 @@ const openReview = async () => {
 </script>
 
 <style scoped>
-/* Kartu calon: maju halus saat hover, "pop" saat dipilih, kilau cahaya berulang pada yang terpilih. */
+/* Kartu calon: maju halus saat hover, "pop" saat dipilih, kilau cahaya berulang + glow oranye kecil pada yang
+   terpilih (canvas 349454e4e4f1 / FE #15–#16; hilang di d236c6d, dipulihkan dengan warna himasif.id). */
 .vote-card {
   transition:
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 300ms ease;
   will-change: transform;
+}
+@media (hover: hover) {
+  .vote-card:not(.is-selected):hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px -18px rgba(0, 0, 0, 0.85);
+  }
+}
+.vote-card.is-selected {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow:
+    0 24px 48px -20px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(255, 109, 0, 0.55),
+    0 0 26px -4px rgba(255, 109, 0, 0.5);
+  animation: vote-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+@keyframes vote-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  55% {
+    transform: translateY(-9px) scale(1.055);
+  }
+  100% {
+    transform: translateY(-6px) scale(1.03);
+  }
+}
+.vote-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.vote-sweep::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 196, 140, 0.08) 35%,
+    rgba(255, 236, 214, 0.3) 50%,
+    rgba(255, 196, 140, 0.08) 65%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-160%) skewX(-18deg);
+  animation: vote-sweep 2.8s cubic-bezier(0.45, 0, 0.25, 1) 0.45s infinite;
+}
+@keyframes vote-sweep {
+  0% {
+    transform: translateX(-160%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(360%) skewX(-18deg);
+  }
 }
 /* Surat suara: kartu setara (HP bertumpuk, ≥ 640px satu baris sama lebar; 4+ calon: grid 2/3 kolom) */
 .vote-ballot {
@@ -807,6 +871,10 @@ const openReview = async () => {
   .vc-enter-from .vc-panel,
   .vc-leave-to .vc-panel {
     transform: none;
+  }
+  /* gerak dikurangi: glow tetap (statis), tanpa pop dan tanpa kilau */
+  .vote-sweep {
+    display: none;
   }
 }
 </style>
