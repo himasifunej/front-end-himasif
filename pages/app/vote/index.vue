@@ -346,7 +346,7 @@
             </h3>
             <p class="mt-2 text-sm text-white/70">Suara yang sudah dikirim tidak bisa diubah.</p>
             <div class="mt-6 grid grid-cols-2 gap-3">
-              <button type="button" class="py-3 rounded-lg border border-border-primary-dark bg-card-primary-dark hover:bg-card-hover-dark font-semibold transition" @click="answerConfirm(false)">
+              <button ref="cancelBtn" type="button" class="py-3 rounded-lg border border-border-primary-dark bg-card-primary-dark hover:bg-card-hover-dark font-semibold transition" @click="answerConfirm(false)">
                 Batal
               </button>
               <button
@@ -529,10 +529,12 @@ const voteLoading = ref(false);
 // Konfirmasi memilih memakai modal sendiri (bukan confirm() / modal generik).
 const confirming = ref(false);
 const confirmBtn = ref(null);
+const cancelBtn = ref(null);
 let confirmResolve = null;
 function askConfirm() {
   confirming.value = true;
-  nextTick(() => confirmBtn.value?.focus());
+  // fokus awal ke Batal: suara tidak bisa diubah, jadi Enter/Spasi yang tak sengaja tidak boleh langsung mengirim
+  nextTick(() => cancelBtn.value?.focus());
   return new Promise((res) => (confirmResolve = res));
 }
 function answerConfirm(ok) {
