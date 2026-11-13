@@ -196,59 +196,71 @@
             </div>
           </section>
 
-          <!-- DAFTAR CALON (belum dibuka & dibuka) -->
+          <!-- DAFTAR CALON (belum dibuka & dibuka): surat suara bergaya VS (canvas enowX 349454e4e4f1) -->
           <section v-if="showCandidates" class="space-y-4">
             <h2 class="text-lg md:text-xl font-bold text-center">Calon Ketua Umum</h2>
-            <p v-if="canVote" class="text-sm text-white/70 -mt-2 text-center">Ketuk kartu calon untuk memilih, lalu kirim pilihanmu.</p>
+            <p class="vote-hint text-sm text-white/70 -mt-2 text-center">
+              Ketuk kartu calon untuk melihat perkenalannya<template v-if="canVote">, lalu pilih dan kirim pilihanmu</template>.
+            </p>
+            <div class="flex justify-center -mt-1">
+              <label class="inline-flex items-center gap-2 text-xs text-white/60 min-h-[32px] cursor-pointer select-none">
+                <input v-model="lessMotion" type="checkbox" class="w-4 h-4 rounded accent-[#FF6D00]" />
+                Kurangi animasi
+              </label>
+            </div>
 
-            <!-- flex-wrap + justify-center: 1–2 calon tetap rata tengah -->
-            <div class="flex flex-wrap justify-center gap-4 md:gap-6 pt-2">
-              <article
-                v-for="c in candidateList"
-                :key="c.id"
-                class="vote-card relative w-full sm:w-[calc(50%-0.75rem)] lg:w-[300px] rounded-2xl border overflow-hidden bg-primary-900"
-                :class="selected === c.id ? 'is-selected border-[#3BC541] ring-2 ring-[#3BC541]' : 'border-primary-800'"
-              >
-                <span v-if="selected === c.id" class="vote-sweep" aria-hidden="true"></span>
-                <button
-                  type="button"
-                  class="w-full text-left flex sm:block disabled:cursor-default"
-                  :disabled="!canVote"
-                  :aria-pressed="selected === c.id"
-                  @click="selected = c.id"
+            <!-- 2–3 calon: satu baris dengan lencana VS (HP: bertumpuk). Lebih dari 3: grid biasa. -->
+            <div class="vote-ballot pt-2" :class="[useVs ? 'is-vs' : 'is-grid', vsPlay ? 'vs-play' : '']">
+              <template v-for="(c, i) in candidateList" :key="c.id">
+                <article
+                  class="vote-card relative rounded-2xl border overflow-hidden bg-primary-900"
+                  :style="{ '--i': i, '--dx': useVs ? (i === 0 ? '-24px' : i === candidateList.length - 1 ? '24px' : '0px') : '0px', '--dy': useVs && i !== 0 && i !== candidateList.length - 1 ? '16px' : '0px' }"
+                  :class="selected === c.id ? 'is-selected border-[#3BC541] ring-2 ring-[#3BC541]' : 'border-primary-800'"
                 >
-                  <div class="relative w-32 sm:w-full shrink-0">
-                    <img
-                      :src="candidatePhoto(c)"
-                      :alt="c.name"
-                      loading="lazy"
-                      class="w-full h-full min-h-[160px] sm:h-72 object-cover"
-                      @error="onImageError"
-                    />
-                    <span
-                      v-if="c.order"
-                      class="absolute top-2 left-2 w-9 h-9 rounded-full bg-white text-black font-bold flex items-center justify-center shadow"
-                    >{{ c.order }}</span>
-                  </div>
-                  <div class="p-4 flex flex-col justify-center gap-1 min-w-0">
-                    <p class="text-xs" :class="selected === c.id ? 'text-[#B8E3B9]' : 'text-secondary'">CALON KETUA UMUM</p>
-                    <h3 class="text-base md:text-lg font-bold uppercase leading-snug break-words">{{ c.name }}</h3>
-                    <p v-if="c.year_of_study" class="text-xs" :class="selected === c.id ? 'text-[#B8E3B9]' : 'text-secondary'">
-                      SISTEM INFORMASI {{ c.year_of_study }}
-                    </p>
-                    <p v-if="selected === c.id" class="text-xs font-semibold text-[#3BC541]">✓ Dipilih</p>
-                  </div>
-                </button>
-                <div class="px-4 pb-4">
+                  <span v-if="selected === c.id" class="vote-sweep" aria-hidden="true"></span>
                   <button
                     type="button"
-                    class="w-full text-sm border border-primary-800 rounded-lg py-2 hover:bg-[#FF7E1D] hover:text-black transition"
-                    @click="detail = c"
+                    class="w-full text-left flex sm:block"
+                    :aria-pressed="selected === c.id"
+                    :aria-label="`Calon nomor ${c.order}, ${c.name}. Ketuk untuk melihat perkenalan${canVote ? ' dan memilih' : ''}.`"
+                    @click="openIntro(c, $event)"
                   >
-                    Lihat visi &amp; misi
+                    <div class="relative w-32 sm:w-full shrink-0">
+                      <img
+                        :src="candidatePhoto(c)"
+                        :alt="c.name"
+                        loading="lazy"
+                        class="w-full h-full min-h-[160px] sm:h-72 object-cover"
+                        @error="onImageError"
+                      />
+                      <span
+                        v-if="c.order"
+                        class="absolute top-2 left-2 w-9 h-9 rounded-full bg-white text-black font-bold flex items-center justify-center shadow"
+                      >{{ c.order }}</span>
+                    </div>
+                    <div class="p-4 flex flex-col justify-center gap-1 min-w-0">
+                      <p class="text-xs" :class="selected === c.id ? 'text-[#B8E3B9]' : 'text-secondary'">CALON KETUA UMUM</p>
+                      <h3 class="text-base md:text-lg font-bold uppercase leading-snug break-words">{{ c.name }}</h3>
+                      <p v-if="c.year_of_study" class="text-xs" :class="selected === c.id ? 'text-[#B8E3B9]' : 'text-secondary'">
+                        SISTEM INFORMASI {{ c.year_of_study }}
+                      </p>
+                      <p v-if="selected === c.id" class="text-xs font-semibold text-[#3BC541]">✓ Dipilih</p>
+                    </div>
                   </button>
+                  <div class="px-4 pb-4">
+                    <button
+                      type="button"
+                      class="w-full text-sm border border-primary-800 rounded-lg py-2 hover:bg-[#FF7E1D] hover:text-black transition"
+                      @click="detail = c"
+                    >
+                      Lihat visi &amp; misi
+                    </button>
+                  </div>
+                </article>
+                <div v-if="useVs && i < candidateList.length - 1" class="vote-vs" :style="{ '--j': i }" aria-hidden="true">
+                  <span class="vs-line"></span><b>VS</b><span class="vs-line"></span>
                 </div>
-              </article>
+              </template>
             </div>
           </section>
         </div>
@@ -280,6 +292,26 @@
       </div>
     </div>
 
+    <!-- PERKENALAN CALON (entrance): diputar sekali per calon, bisa dilewati -->
+    <Teleport to="body">
+      <LazyVoteIntro
+        v-if="introFor"
+        :key="introFor.id"
+        :candidate="introFor"
+        :intro="election?.intro"
+        :photo="candidatePhoto(introFor)"
+        :video-src="introFor.intro?.video_url || ''"
+        :reduced="reducedMotion"
+        :start-done="!!introSeen[introFor.id]"
+        :can-pick="canVote"
+        :pick-hint="pickHint"
+        @played="(id) => (introSeen[id] = true)"
+        @close="closeIntro"
+        @pick="pickFromIntro"
+        @detail="detailFromIntro"
+      />
+    </Teleport>
+
     <!-- KONFIRMASI PILIHAN (modal sendiri, bukan dialog bawaan / generik) -->
     <Teleport to="body">
       <Transition name="vc">
@@ -295,7 +327,7 @@
             <img
               :src="candidatePhoto(selectedCandidate)"
               :alt="selectedCandidate.name"
-              class="mx-auto w-24 h-28 object-cover rounded-2xl border-2 border-[#3BC541]"
+              class="mx-auto w-36 h-44 sm:w-40 sm:h-[200px] object-cover object-[50%_20%] rounded-2xl border-2 border-[#3BC541]"
               @error="onImageError"
             />
             <p class="mt-4 text-xs uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Konfirmasi pilihan</p>
@@ -461,6 +493,57 @@ const canVote = computed(
 
 const selected = ref(null);
 const selectedCandidate = computed(() => candidateList.value.find((c) => c.id === selected.value) || null);
+
+// Perkenalan calon: ketuk kartu → entrance (sekali per calon) → "Pilih calon ini" → kartu hijau + bar Kirim pilihan.
+const useVs = computed(() => candidateList.value.length >= 2 && candidateList.value.length <= 3);
+const prefersReduced = ref(false);
+const lessMotion = ref(false);
+const reducedMotion = computed(() => prefersReduced.value || lessMotion.value);
+const vsPlay = ref(false);
+const introFor = ref(null);
+const introSeen = reactive({});
+let introOrigin = null;
+const pickHint = computed(() => {
+  if (phase.value !== "open") return "Voting belum dibuka.";
+  if (!authenticated.value) return "Masuk dulu lewat tautan di email voting untuk memilih.";
+  return reasonText.value || "Akun ini tidak bisa memilih di pemilihan ini.";
+});
+function openIntro(c, ev) {
+  introOrigin = ev?.currentTarget || null;
+  introFor.value = c;
+}
+function closeIntro() {
+  introFor.value = null;
+  nextTick(() => introOrigin?.focus());
+}
+function pickFromIntro(c) {
+  selected.value = c.id;
+  closeIntro();
+}
+function detailFromIntro(c) {
+  introFor.value = null;
+  detail.value = c;
+}
+watch(lessMotion, (v) => {
+  try { localStorage.setItem("vote-less-motion", v ? "1" : "0"); } catch (e) {}
+});
+const { run: runPreload } = useIntroPreload();
+watch(
+  () => showCandidates.value && candidateList.value.length > 0,
+  (ready) => {
+    if (!ready || !import.meta.client) return;
+    // layar VS: diputar sekali per kunjungan, kecuali reduced motion
+    if (!reducedMotion.value && !vsPlay.value) {
+      vsPlay.value = true;
+      setTimeout(() => (vsPlay.value = false), 1500);
+    }
+    // preload hanya untuk yang bisa memilih (pengunjung biasa tidak menarik video)
+    if (canVote.value) runPreload(candidateList.value, election.value?.intro, candidatePhoto);
+  },
+);
+watch(canVote, (v) => {
+  if (v && showCandidates.value) runPreload(candidateList.value, election.value?.intro, candidatePhoto);
+});
 const detail = ref(null);
 const voteLoading = ref(false);
 
@@ -479,7 +562,7 @@ function answerConfirm(ok) {
   confirmResolve = null;
 }
 function onKey(e) {
-  if (e.key !== "Escape") return;
+  if (e.key !== "Escape" || introFor.value) return; // lapisan perkenalan menangani Esc sendiri
   if (confirming.value) answerConfirm(false);
   else if (detail.value) detail.value = null;
 }
@@ -495,6 +578,17 @@ let timer;
 let lastRefresh = 0;
 onMounted(async () => {
   window.addEventListener("keydown", onKey);
+  try {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    prefersReduced.value = mq.matches;
+    mq.addEventListener?.("change", (e) => (prefersReduced.value = e.matches));
+    lessMotion.value = localStorage.getItem("vote-less-motion") === "1";
+  } catch (e) {}
+  if (showCandidates.value && candidateList.value.length && !reducedMotion.value) {
+    vsPlay.value = true;
+    setTimeout(() => (vsPlay.value = false), 1500);
+  }
+  if (canVote.value && showCandidates.value) runPreload(candidateList.value, election.value?.intro, candidatePhoto);
   const pid = Number(route.query.election);
   if (previewMode.value && pid > 0) {
     useNuxtApp()
@@ -641,6 +735,118 @@ const submitVote = async () => {
   55%,
   100% {
     transform: translateX(360%) skewX(-18deg);
+  }
+}
+
+/* Surat suara VS */
+.vote-ballot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vote-ballot.is-grid {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+.vote-ballot.is-grid .vote-card {
+  width: 100%;
+}
+.vote-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.vote-vs .vs-line {
+  flex: 1;
+  height: 1px;
+  background: #333;
+}
+.vote-vs b {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 999px;
+  border: 2px solid #ff6d00;
+  color: #ff6d00;
+  background: #111;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 640px) {
+  .vote-ballot.is-vs {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 12px;
+  }
+  .vote-ballot.is-vs .vote-card {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 300px;
+  }
+  .vote-ballot.is-vs .vote-vs .vs-line {
+    display: none;
+  }
+  .vote-ballot.is-grid .vote-card {
+    width: calc(50% - 0.5rem);
+  }
+}
+@media (min-width: 1024px) {
+  .vote-ballot.is-vs {
+    gap: 24px;
+  }
+  .vote-vs b {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+  }
+  .vote-ballot.is-grid .vote-card {
+    width: 300px;
+  }
+}
+/* Intro VS: sekali, ±1,4 dtk; kartu bisa diketuk sejak awal */
+.vs-play .vote-card {
+  animation: vs-card 450ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  animation-delay: calc(200ms + var(--i, 0) * 60ms);
+}
+.vs-play .vote-vs b {
+  animation: vs-stamp 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(650ms + var(--j, 0) * 80ms);
+}
+@keyframes vs-card {
+  from {
+    opacity: 0;
+    transform: translate(0, 16px);
+  }
+}
+@media (min-width: 640px) {
+  @keyframes vs-card {
+    from {
+      opacity: 0;
+      transform: translate(var(--dx, 0), var(--dy, 0));
+    }
+  }
+}
+@keyframes vs-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vs-play .vote-card,
+  .vs-play .vote-vs b {
+    animation: none;
+  }
+  .vote-sweep::before {
+    animation: none;
   }
 }
 
