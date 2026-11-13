@@ -339,7 +339,7 @@ onMounted(() => {
 
     setTimeout(() => {
         isPlayVideo.value = true
-        bannerVideo.value.load();
+        bannerVideo.value?.load(); // halaman bisa sudah ditinggalkan (mis. dialihkan ke /app/vote setelah login)
     }, 8000)
 })
 

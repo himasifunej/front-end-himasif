@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -85,4 +85,23 @@ test("createConfirmGuard: Enter tertahan / terbawa tidak mengirim, tekanan baru 
   assert.equal(g.allowClick({ detail: 0 }, 1901), true, "Enter baru yang disengaja");
   g.open(5000);
   assert.equal(g.allowClick({ detail: 0 }, 5600), false, "dibuka ulang: status direset");
+});
+
+// Insiden 13 Nov: login berhasil tapi layar tidak berpindah. Setelah login, halaman voting harus
+// menampilkan surat suara atau "Kamu sudah memilih", tidak pernah diam.
+test("voterScreen: pemilih yang masih bisa memilih → surat suara", () => {
+  assert.equal(voterScreen("open", { eligible: true, has_voted: false }), "ballot");
+});
+test("voterScreen: sudah memilih → layar 'Kamu sudah memilih' (juga bila bukti belum termuat / pemilihan ditutup)", () => {
+  assert.equal(voterScreen("open", { eligible: false, has_voted: true }), "voted");
+  assert.equal(voterScreen("open", { eligible: true, has_voted: false }, true), "voted");
+  assert.equal(voterScreen("closed", { has_voted: true }), "voted");
+});
+test("voterScreen: tidak berhak → alasan; status belum dimuat → loading; belum dibuka → tunggu", () => {
+  assert.equal(voterScreen("open", { eligible: false, has_voted: false, reason: "year_out_of_range" }), "reason");
+  assert.equal(voterScreen("open", null), "loading");
+  assert.equal(voterScreen("upcoming", { eligible: true }), "wait");
+});
+test("AFTER_LOGIN_PATH menuju halaman voting", () => {
+  assert.equal(AFTER_LOGIN_PATH, "/app/vote");
 });

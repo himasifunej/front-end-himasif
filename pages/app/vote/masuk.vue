@@ -131,7 +131,7 @@ async function loginWithPassword() {
     const d = res?.data ?? {};
     if (!d.token) throw { data: res };
     authStore.setSession(d.token, d.voter, d.expires_at);
-    await navigateTo("/app/vote", { replace: true });
+    await navigateTo(AFTER_LOGIN_PATH, { replace: true });
   } catch (e) {
     loginError.value = apiError(e).message || "NIM atau password salah.";
   } finally {
