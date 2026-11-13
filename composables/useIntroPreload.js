@@ -1,6 +1,6 @@
 /*
  * Preload media perkenalan calon setelah surat suara tampil (bukan saat halaman dibuka).
- * Urutan: foto resmi semua calon → frame burst → video, SATU PER SATU dengan prioritas rendah,
+ * Urutan: foto resmi semua calon → lalu per calon: video → frame burst; SATU PER SATU, prioritas rendah,
  * supaya ±200 HP di NAT kampus tidak menarik semuanya bersamaan.
  *
  * Video memakai <link rel="prefetch">: storage BE (v2.himasif.id) tidak mengirim header CORS, jadi fetch()
@@ -45,13 +45,15 @@ export function useIntroPreload() {
       await img(photoOf(c));
     }
     if (intro?.mode !== "full") return;
-    for (const c of list) for (const f of c.intro?.frames || []) {
-      if (aborted) return;
-      await img(f);
-    }
+    // per calon sesuai urutan surat suara: video dulu (dibutuhkan saat diketuk), lalu frame burst
+    // (baru dibutuhkan 6 dtk kemudian). Pemilih biasanya mengetuk calon 1 lebih dulu.
     for (const c of list) {
       if (aborted) return;
       await prefetch(c.intro?.video_url);
+      for (const f of c.intro?.frames || []) {
+        if (aborted) return;
+        await img(f);
+      }
     }
   }
 
