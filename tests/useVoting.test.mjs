@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -51,4 +51,38 @@ test("loginBody: NIM atau email", () => {
 test("candidatePhoto fallback", () => {
   assert.equal(candidatePhoto({ photo_url: "https://x/a.jpg" }), "https://x/a.jpg");
   assert.equal(candidatePhoto(null), "/img/logo/himasif-white.png");
+});
+
+test("createConfirmGuard: klik dalam 500 ms setelah dialog terbuka ditolak (ketukan ganda)", () => {
+  const g = createConfirmGuard(500);
+  g.open(1000);
+  g.pointerDown(1150); // ketukan kedua dari ketukan ganda
+  assert.equal(g.allowClick({ detail: 1 }, 1160), false);
+  assert.equal(g.ready(1400), false);
+  assert.equal(g.ready(1500), true);
+});
+
+test("createConfirmGuard: klik yang dimulai sebelum dialog muncul tidak mengirim", () => {
+  const g = createConfirmGuard(500);
+  g.pointerDown(900); // pointerdown di tombol bar sebelum dialog dibuka
+  g.open(1000);
+  assert.equal(g.allowClick({ detail: 1 }, 1700), false, "tanpa pointerdown baru di tombol final");
+  g.pointerDown(1800);
+  assert.equal(g.allowClick({ detail: 1 }, 1850), true, "klik sengaja setelah jeda");
+});
+
+test("createConfirmGuard: Enter tertahan / terbawa tidak mengirim, tekanan baru boleh", () => {
+  const g = createConfirmGuard(500);
+  g.open(1000);
+  assert.equal(g.allowClick({ detail: 0 }, 1700), false, "klik keyboard tanpa keydown di tombol ini (Enter terbawa)");
+  g.keyDown({ key: "Enter", repeat: true }, 1700);
+  assert.equal(g.allowClick({ detail: 0 }, 1701), false, "auto-repeat");
+  g.keyDown({ key: "Enter" }, 1200);
+  assert.equal(g.allowClick({ detail: 0 }, 1201), false, "terlalu cepat");
+  g.keyDown({ key: "1" }, 1800);
+  assert.equal(g.allowClick({ detail: 0 }, 1801), false, "pintasan angka bukan konfirmasi");
+  g.keyDown({ key: "Enter" }, 1900);
+  assert.equal(g.allowClick({ detail: 0 }, 1901), true, "Enter baru yang disengaja");
+  g.open(5000);
+  assert.equal(g.allowClick({ detail: 0 }, 5600), false, "dibuka ulang: status direset");
 });

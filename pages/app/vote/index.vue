@@ -289,13 +289,13 @@
           type="button"
           class="shrink-0 px-5 py-3 rounded-lg font-semibold bg-div-mediatek hover:bg-[#FF7E1D] text-black disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           :disabled="!selectedCandidate || voteLoading"
-          @click="submitVote"
+          @click="openReview"
         >
           <svg v-if="voteLoading" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".3" />
             <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" />
           </svg>
-          Kirim pilihan
+          Tinjau pilihan
         </button>
       </div>
     </div>
@@ -322,29 +322,33 @@
       />
     </Teleport>
 
-    <!-- KONFIRMASI PILIHAN (modal sendiri, bukan dialog bawaan / generik) -->
+    <!-- KONFIRMASI PILIHAN: ringkasan + klik terpisah "Kirim pilihan" (insiden 13 Nov: ketukan ganda/Enter kedua) -->
     <Teleport to="body">
       <Transition name="vc">
         <div
           v-if="confirming && selectedCandidate"
-          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
+          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="vote-confirm-title"
-          @click.self="answerConfirm(false)"
+          aria-describedby="vote-confirm-desc"
+          @click.self="onConfirmBackdrop"
         >
-          <div class="vc-panel w-full sm:max-w-sm bg-card-primary-dark border border-border-primary-dark rounded-t-lg sm:rounded-lg p-6 text-center text-white shadow-2xl">
+          <div class="vc-panel w-full max-w-sm bg-card-primary-dark border border-border-primary-dark rounded-lg p-6 text-center text-white shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.2em] text-div-mediatek font-semibold">Ringkasan pilihan</p>
             <img
               :src="candidatePhoto(selectedCandidate)"
               :alt="selectedCandidate.name"
-              class="mx-auto w-36 h-44 sm:w-40 sm:h-[200px] object-cover object-[50%_20%] rounded-lg border-2 border-div-mediatek"
+              class="mt-3 mx-auto w-36 h-44 sm:w-40 sm:h-[200px] object-cover object-[50%_20%] rounded-lg border-2 border-div-mediatek"
               @error="onImageError"
             />
-            <p class="mt-4 text-xs uppercase tracking-[0.2em] text-[#FF6D00] font-semibold">Konfirmasi pilihan</p>
-            <h3 id="vote-confirm-title" class="mt-1 text-lg font-bold uppercase leading-snug break-words">
+            <h3 id="vote-confirm-title" class="mt-3 text-lg font-bold uppercase leading-snug break-words">
               <template v-if="selectedCandidate.order">{{ selectedCandidate.order }}. </template>{{ selectedCandidate.name }}
             </h3>
-            <p class="mt-2 text-sm text-white/70">Suara yang sudah dikirim tidak bisa diubah.</p>
+            <p id="vote-confirm-desc" class="mt-2 text-sm text-white/70">
+              Periksa lagi. Suara yang sudah dikirim <b class="text-white">tidak bisa diubah</b>. Tekan <b class="text-white">Kirim pilihan</b> bila sudah yakin.
+            </p>
+            <p v-if="confirmError" class="mt-3 text-sm text-red-300" role="alert">{{ confirmError }}</p>
             <div class="mt-6 grid grid-cols-2 gap-3">
               <button ref="cancelBtn" type="button" class="py-3 rounded-lg border border-border-primary-dark bg-card-primary-dark hover:bg-card-hover-dark font-semibold transition" @click="answerConfirm(false)">
                 Batal
@@ -352,10 +356,14 @@
               <button
                 ref="confirmBtn"
                 type="button"
-                class="py-3 rounded-lg bg-div-mediatek hover:bg-[#FF7E1D] text-black font-semibold transition"
-                @click="answerConfirm(true)"
+                class="py-3 rounded-lg bg-div-mediatek hover:bg-[#FF7E1D] text-black font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="!confirmToken || !confirmArmed"
+                :aria-disabled="!confirmToken || !confirmArmed"
+                @pointerdown="onFinalPointerDown"
+                @keydown="onFinalKeyDown"
+                @click="onFinalClick"
               >
-                Ya, kirim
+                Kirim pilihan
               </button>
             </div>
           </div>
@@ -530,17 +538,54 @@ const voteLoading = ref(false);
 const confirming = ref(false);
 const confirmBtn = ref(null);
 const cancelBtn = ref(null);
+// Pengaman konfirmasi: jeda 500 ms, gerakan harus dimulai di tombol final, dan token sekali pakai dari server.
+const confirmGuard = createConfirmGuard(500);
+const confirmToken = ref(null);
+const confirmArmed = ref(false);
+const confirmError = ref("");
+let armTimer = null;
 let confirmResolve = null;
 function askConfirm() {
   confirming.value = true;
+  confirmError.value = "";
+  confirmToken.value = null;
+  confirmArmed.value = false;
+  confirmGuard.open(performance.now());
+  clearTimeout(armTimer);
+  armTimer = setTimeout(() => (confirmArmed.value = true), 500);
   // fokus awal ke Batal: suara tidak bisa diubah, jadi Enter/Spasi yang tak sengaja tidak boleh langsung mengirim
   nextTick(() => cancelBtn.value?.focus());
+  // token dari server: suara hanya diterima bila layar ringkasan ini benar-benar dibuka untuk calon ini
+  const id = election.value.id, cid = selectedCandidate.value.id;
+  useNuxtApp()
+    .$api(VOTING_API.confirm(id), { method: "POST", headers: voterAuthHeader(), body: { candidate_id: cid } })
+    .then((r) => { if (confirming.value && selectedCandidate.value?.id === cid) confirmToken.value = r?.data?.confirm_token || null; })
+    .catch((e) => (confirmError.value = apiError(e).message || "Ringkasan tidak bisa dibuka. Coba lagi."));
   return new Promise((res) => (confirmResolve = res));
 }
 function answerConfirm(ok) {
   confirming.value = false;
+  clearTimeout(armTimer);
   confirmResolve?.(ok);
   confirmResolve = null;
+}
+function onFinalPointerDown() {
+  confirmGuard.pointerDown(performance.now());
+}
+function onFinalKeyDown(e) {
+  confirmGuard.keyDown(e, performance.now());
+}
+/** Tombol final: hanya klik/tekanan yang disengaja (lihat createConfirmGuard). */
+function onFinalClick(e) {
+  if (!confirmToken.value || !confirmGuard.allowClick(e, performance.now())) {
+    e.preventDefault();
+    return;
+  }
+  answerConfirm(true);
+}
+function onConfirmBackdrop() {
+  // ketukan ganda di tombol bar tidak boleh langsung menutup ringkasan
+  if (confirmGuard.ready(performance.now())) answerConfirm(false);
 }
 function onKey(e) {
   if (introFor.value) return; // modal calon menangani Esc/Enter/angka sendiri
@@ -614,8 +659,9 @@ function showReceipt(r) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-const submitVote = async () => {
-  if (!selectedCandidate.value || !canVote.value || voteLoading.value) return;
+/** Tombol bar "Tinjau pilihan": hanya membuka ringkasan. Suara dikirim dari tombol "Kirim pilihan" di ringkasan. */
+const openReview = async () => {
+  if (!selectedCandidate.value || !canVote.value || voteLoading.value || confirming.value) return;
   if (!(await askConfirm())) return;
 
   voteLoading.value = true;
@@ -624,7 +670,7 @@ const submitVote = async () => {
     const res = await useNuxtApp().$api(VOTING_API.vote(id), {
       method: "POST",
       headers: voterAuthHeader(),
-      body: { candidate_id: selectedCandidate.value.id },
+      body: { candidate_id: selectedCandidate.value.id, confirm_token: confirmToken.value },
     });
     showReceipt(res.data);
     toast.success("Suaramu sudah tercatat", "Terima kasih sudah ikut memilih.");
@@ -645,9 +691,11 @@ const submitVote = async () => {
       err.message = "Sesi berakhir, silakan masuk lagi.";
     }
     if (err.status === 423) await refreshElection();
+    if (err.code === "confirm_required") err.message = "Buka ringkasan pilihan lagi, lalu tekan Kirim pilihan.";
     toast.error("Suara belum terkirim", err.message);
   } finally {
     voteLoading.value = false;
+    confirmToken.value = null;
   }
 };
 </script>
