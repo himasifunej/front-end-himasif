@@ -49,19 +49,8 @@
         </div>
 
         <div ref="stage" class="intro-stage relative overflow-hidden bg-black rounded-lg w-full h-[440px] sm:h-[420px] lg:h-[640px]">
-          <video
-            v-if="full"
-            ref="vid"
-            class="intro-media"
-            style="opacity: 0"
-            :src="videoSrc"
-            muted
-            playsinline
-            preload="auto"
-            aria-hidden="true"
-            @playing="onPlaying"
-            @error="onVideoError"
-          ></video>
+          <!-- elemen <video> dari pool (useIntroVideoPool): sama untuk calon ini setiap kali kartunya aktif -->
+          <div v-if="full" ref="vidSlot" class="absolute inset-0" aria-hidden="true"></div>
           <template v-if="full">
             <img
               v-for="(f, i) in frames"
@@ -191,7 +180,8 @@ const frames = computed(() => props.candidate.intro?.frames || []);
 const full = computed(() => !props.reduced && props.intro?.mode === "full" && !!props.candidate.intro?.video_url && frames.value.length > 0);
 const yy = computed(() => String(props.candidate.year_of_study || "").slice(-2));
 
-const root = ref(null), stage = ref(null), vid = ref(null), dim = ref(null), official = ref(null), flash = ref(null);
+const root = ref(null), stage = ref(null), dim = ref(null), official = ref(null), flash = ref(null);
+const vid = shallowRef(null), vidSlot = ref(null);
 const num = ref(null), numText = ref(null), progA = ref(null), progB = ref(null), visiMisi = ref(null);
 const skipA = ref(null), skipB = ref(null), pickA = ref(null), pickB = ref(null);
 const navPrevOut = ref(null), navNextOut = ref(null), navPrevIn = ref(null), navNextIn = ref(null);
@@ -442,10 +432,34 @@ function onKey(e) {
   }
 }
 
+function attachVideo() {
+  if (!full.value || !vidSlot.value) return;
+  const el = introVideoEl(props.candidate.id, props.videoSrc);
+  if (!el) return;
+  put(el, "opacity", "0");
+  vidSlot.value.appendChild(el);
+  el.addEventListener("playing", onPlaying);
+  el.addEventListener("error", onVideoError);
+  vid.value = el;
+}
+function detachVideo() {
+  const el = vid.value;
+  if (!el) return;
+  el.removeEventListener("playing", onPlaying);
+  el.removeEventListener("error", onVideoError);
+  releaseIntroVideo(el, vidSlot.value);
+  vid.value = null;
+}
+
 onMounted(() => {
   shownAt = performance.now();
   window.addEventListener("keydown", onKey);
   document.documentElement.style.overflow = "hidden";
+  attachVideo();
+  if (!props.reduced && props.intro?.mode === "full") {
+    warmIntro(props.next);
+    warmIntro(props.prev);
+  }
   if (props.startDone) {
     skip();
     nextTick(() => {
@@ -461,14 +475,17 @@ onMounted(() => {
     });
   } else {
     play();
-    nextTick(focusSkip);
+    nextTick(() => {
+      if (props.navFrom) (navButton(props.navFrom === "prev" ? -1 : 1) || root.value)?.focus({ preventScroll: true });
+      else focusSkip();
+    });
   }
 });
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf);
   window.removeEventListener("keydown", onKey);
   document.documentElement.style.overflow = "";
-  vid.value?.pause();
+  detachVideo(); // berhenti + kembali ke frame 0
 });
 </script>
 
@@ -481,6 +498,14 @@ onBeforeUnmount(() => {
   contain: paint;
 }
 .intro-stage :deep(.intro-media) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 25%;
+}
+.intro-stage :deep(.intro-vid) {
   position: absolute;
   inset: 0;
   width: 100%;

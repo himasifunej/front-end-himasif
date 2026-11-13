@@ -311,7 +311,7 @@
         :photo="candidatePhoto(introFor)"
         :video-src="introFor.intro?.video_url || ''"
         :reduced="reducedMotion"
-        :start-done="!!introSeen[introFor.id] || introVisi || !!introNavFrom"
+        :start-done="introVisi"
         :focus-visi="introVisi"
         :can-pick="canVote"
         :pick-hint="pickHint"
