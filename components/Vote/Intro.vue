@@ -29,7 +29,8 @@
           playsinline
           preload="auto"
           aria-hidden="true"
-          @playing="videoOk = true"
+          @playing="videoPlaying = true"
+          @waiting="videoPlaying = false"
           @error="videoFailed = true"
         ></video>
         <template v-if="full">
@@ -115,7 +116,7 @@ const num = ref(null), numText = ref(null), plate = ref(null), ctl = ref(null), 
 const skipA = ref(null), skipB = ref(null), pickBtn = ref(null);
 const frameEls = [];
 const done = ref(false);
-const videoOk = ref(false);
+const videoPlaying = ref(false); // video benar-benar berputar (bukan masih memuat)
 const videoFailed = ref(false);
 const skipLabel = computed(() => (done.value ? "Tutup perkenalan, kembali ke surat suara" : "Lewati perkenalan"));
 
@@ -159,15 +160,17 @@ function render(t) {
   if (isFull) {
     const vOn = t < Tl.video_end;
     const v = vid.value;
+    // video baru tampil setelah benar-benar berputar; selama memuat (jaringan lambat) atau gagal, segmen video memakai frame
+    const useVideo = vOn && videoPlaying.value && !videoFailed.value;
     if (v) {
-      v.style.opacity = vOn && !videoFailed.value ? 1 : 0;
+      v.style.opacity = useVideo ? 1 : 0;
       v.style.transform = `scale(${1.06 - 0.06 * cl(t / Tl.video_end)})`;
       if (!vOn && !v.paused) v.pause();
     }
     dim.value.style.opacity = t < Tl.burst_start ? 0.55 * eo(span(t, Tl.dim)) : 0.25 * (1 - eo((t - Tl.number_to_corner[0]) / 400));
     let idx = t < Tl.burst_start ? -1 : Math.min(frameEls.length - 1, Math.floor((t - Tl.burst_start) / Tl.burst_step));
-    // video gagal dimuat: segmen video memakai 3 frame pelan (perlakuan sama untuk calon mana pun)
-    if (vOn && videoFailed.value) idx = Math.min(frameEls.length - 1, Math.floor(t / (Tl.video_end / 3)));
+    // video belum siap / gagal: segmen video memakai 3 frame pelan (perlakuan sama untuk calon mana pun)
+    if (vOn && !useVideo) idx = Math.min(frameEls.length - 1, Math.floor(t / (Tl.video_end / 3)));
     const local = t < Tl.freeze ? ((t - Tl.burst_start) % Tl.burst_step) / Tl.burst_step : 1;
     frameEls.forEach((f, i) => {
       if (!f) return;
@@ -217,6 +220,7 @@ function play() {
   cancelAnimationFrame(raf);
   done.value = false;
   videoFailed.value = false;
+  videoPlaying.value = false;
   const v = vid.value;
   if (v && full.value) {
     try { v.currentTime = 0; } catch (e) {}
