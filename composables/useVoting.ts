@@ -214,3 +214,37 @@ export function createConfirmGuard(minMs = 500) {
     },
   };
 }
+
+/**
+ * Navigasi antar-calon di modal perkenalan (panah, ←/→, geser). Berputar: dari calon terakhir ke calon pertama
+ * dan sebaliknya, supaya semua calon setara (tidak ada calon "di ujung"). Mengembalikan indeks tujuan, atau -1
+ * bila tidak ada calon lain.
+ */
+export function neighborIndex(count: number, index: number, dir: 1 | -1): number {
+  if (count < 2 || index < 0 || index >= count) return -1;
+  return (index + dir + count) % count;
+}
+
+/**
+ * Tombol keyboard → arah navigasi (-1/1) atau 0. Hanya ←/→ tanpa modifier dan BUKAN auto-repeat
+ * (menahan panah tidak memutar calon terus-menerus). Navigasi tidak pernah memilih atau mengirim suara.
+ */
+export function navKeyDir(e: { key: string; repeat?: boolean; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }): -1 | 0 | 1 {
+  if (e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return 0;
+  return e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+}
+
+/** Geser jari → arah (-1/1) atau 0: cukup jauh (≥ 60 px), cukup mendatar, dan cukup cepat (≤ 700 ms). */
+export function swipeDir(dx: number, dy: number, ms: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || ms > 700) return 0;
+  return dx < 0 ? 1 : -1; // geser ke kiri = calon berikutnya
+}
+
+/**
+ * Enter di modal hanya boleh memilih calon yang tampil bila: bukan auto-repeat, dan (setelah pindah calon)
+ * sudah lewat `minMs` sejak calon ini tampil. Enter yang ditahan/terbawa dari tombol panah tidak memilih.
+ */
+export function enterMayPick(e: { repeat?: boolean }, shownAt: number, now: number, navigated: boolean, minMs = 500): boolean {
+  if (e.repeat) return false;
+  return !navigated || now - shownAt >= minMs;
+}
