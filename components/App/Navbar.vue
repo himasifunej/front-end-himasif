@@ -97,10 +97,10 @@
 
                                         <div class="py-[18.5px] pl-6 pr-8 w-[calc(100vw-2rem)] max-w-[400px]" v-show="!isForgetPassword">
                                             <div class="flex">
-                                                <h3 class="text-title-4">Masuk</h3>
-                                                <div class="absolute bg-bg-primary border dark:bg-bg-primary-dark border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
+                                                <h3 class="text-title-4 text-text-primary dark:text-text-primary-dark">Masuk</h3>
+                                                <div class="absolute text-text-primary dark:text-white bg-bg-primary border dark:bg-bg-primary-dark border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
                                                     data-modal-hide="authentication-modal">
-                                                    <svg width="20px" height="20px" fill="#fff" viewBox="-3.5 0 19 19"
+                                                    <svg width="20px" height="20px" fill="currentColor" viewBox="-3.5 0 19 19"
                                                         xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
                                                         <path
                                                             d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
@@ -167,10 +167,10 @@
                                         </div>
 
                                         <div class="py-[18.5px] pl-6 pr-8 w-[calc(100vw-2rem)] max-w-[400px]" v-show="isForgetPassword">
-                                            <h3 class="text-title-4 mb-4 pr-10">Kirim ulang link masuk</h3>
-                                            <div class="absolute bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
+                                            <h3 class="text-title-4 mb-4 pr-10 text-text-primary dark:text-text-primary-dark">Kirim ulang link masuk</h3>
+                                            <div class="absolute text-text-primary dark:text-white bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
                                                 data-modal-hide="authentication-modal" @click="isForgetPassword = false">
-                                                <svg width="20px" height="20px" fill="#fff" viewBox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
+                                                <svg width="20px" height="20px" fill="currentColor" viewBox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
                                                     <path d="M11.383 13.644A1.03 1.03 0 0 1 9.928 15.1L6 11.172 2.072 15.1a1.03 1.03 0 1 1-1.455-1.456l3.928-3.928L.617 5.79a1.03 1.03 0 1 1 1.455-1.456L6 8.261l3.928-3.928a1.03 1.03 0 0 1 1.455 1.456L7.455 9.716z" />
                                                 </svg>
                                             </div>

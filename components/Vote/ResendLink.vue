@@ -1,10 +1,10 @@
 <template>
   <form class="w-full space-y-2 text-left" @submit.prevent="send">
-    <p v-if="!done" class="text-sm opacity-90">
+    <p v-if="!done" class="text-xs md:text-sm opacity-90">
       Tidak menemukan email voting? Isi NIM kamu, link masuk baru dikirim ke email UNEJ (NIM@mail.unej.ac.id).
       Password tidak berubah.
     </p>
-    <div v-if="!done" class="flex gap-2">
+    <div v-if="!done" class="flex flex-col sm:flex-row gap-2">
       <label class="sr-only" :for="inputId">NIM</label>
       <input
         :id="inputId"
