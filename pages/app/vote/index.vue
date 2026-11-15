@@ -219,22 +219,26 @@
 
           <!-- DAFTAR CALON (belum dibuka & dibuka): gaya himasif.id, semua calon setara -->
           <section v-if="showCandidates" class="space-y-4" aria-labelledby="calon-title">
-            <div class="relative">
+            <div class="relative flex flex-col items-center gap-2 sm:block">
               <h2 id="calon-title" class="text-title-3-sm md:text-title-3 text-center">{{ phase === "upcoming" ? "Kenali Calon" : "Calon Ketua Umum" }}</h2>
-              <!-- tombol kecil di pojok: kurangi animasi (prefers-reduced-motion tetap dihormati) -->
+              <!-- Video perkenalan calon: ikon + label mengikuti keadaan sebenarnya (diputar / dijeda).
+                   prefers-reduced-motion → mulai dijeda; pilihan pengguna disimpan di perangkat ini. -->
               <button
                 type="button"
-                class="absolute right-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg border border-border-primary-dark bg-card-primary-dark hover:bg-card-hover-dark inline-flex items-center justify-center text-text-secondary-dark"
-                :class="lessMotion ? 'text-div-mediatek border-div-mediatek' : ''"
-                :aria-pressed="lessMotion || prefersReduced"
-                :disabled="prefersReduced"
-                :title="prefersReduced ? 'Animasi dikurangi (pengaturan perangkat)' : lessMotion ? 'Animasi dikurangi — ketuk untuk menyalakan lagi' : 'Kurangi animasi'"
-                :aria-label="prefersReduced ? 'Animasi dikurangi oleh pengaturan perangkat' : 'Kurangi animasi'"
-                @click="lessMotion = !lessMotion"
+                data-test="video-toggle"
+                class="video-toggle sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 h-9 px-3 rounded-lg border border-border-primary-dark bg-card-primary-dark hover:bg-card-hover-dark inline-flex items-center gap-2 text-sm text-text-secondary-dark hover:text-white"
+                :aria-label="videoOn ? 'Jeda video perkenalan calon' : 'Putar video perkenalan calon'"
+                :aria-pressed="videoOn ? 'false' : 'true'"
+                :title="videoOn ? 'Video perkenalan calon diputar. Ketuk untuk menjeda.' : 'Video perkenalan calon dijeda. Ketuk untuk memutar.'"
+                @click="toggleVideo"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg v-if="videoOn" data-icon="pause" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                   <rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" />
                 </svg>
+                <svg v-else data-icon="play" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                  <path d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5z" />
+                </svg>
+                <span aria-hidden="true">{{ videoOn ? "Jeda video" : "Putar video" }}</span>
               </button>
             </div>
             <p class="text-sm text-text-secondary-dark -mt-2 text-center">
@@ -534,9 +538,17 @@ const selected = ref(null);
 const selectedCandidate = computed(() => candidateList.value.find((c) => c.id === selected.value) || null);
 
 // Perkenalan + visi-misi calon dalam satu modal → "Pilih calon ini" → kartu ditandai + bar Kirim pilihan.
-const prefersReduced = ref(false);
-const lessMotion = ref(false);
-const reducedMotion = computed(() => prefersReduced.value || lessMotion.value);
+// Video perkenalan calon: diputar kecuali pengguna menjedanya atau perangkat minta gerak dikurangi.
+// Pilihan pengguna (tombol "Jeda video" / "Putar video") disimpan dan mengalahkan pengaturan perangkat.
+const VIDEO_PREF_KEY = "vote-video";
+const videoOn = ref(true);
+let videoChosen = false;
+const reducedMotion = computed(() => !videoOn.value);
+function toggleVideo() {
+  videoOn.value = !videoOn.value;
+  videoChosen = true;
+  try { localStorage.setItem(VIDEO_PREF_KEY, videoOn.value ? "on" : "off"); } catch (e) {}
+}
 const introFor = ref(null);
 const introVisi = ref(false);
 const introSeen = reactive({});
@@ -592,9 +604,6 @@ function selectByNumber(n) {
   if (introFor.value) closeIntro();
   nextTick(() => document.querySelectorAll(".vote-card")[candidateList.value.indexOf(c)]?.querySelector("button")?.focus());
 }
-watch(lessMotion, (v) => {
-  try { localStorage.setItem("vote-less-motion", v ? "1" : "0"); } catch (e) {}
-});
 const { run: runPreload } = useIntroPreload();
 watch(
   () => showCandidates.value && candidateList.value.length > 0,
@@ -694,9 +703,11 @@ onMounted(async () => {
   window.addEventListener("keydown", onKey);
   try {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    prefersReduced.value = mq.matches;
-    mq.addEventListener?.("change", (e) => (prefersReduced.value = e.matches));
-    lessMotion.value = localStorage.getItem("vote-less-motion") === "1";
+    videoOn.value = !mq.matches;
+    mq.addEventListener?.("change", (e) => { if (!videoChosen) videoOn.value = !e.matches; });
+    let pref = null;
+    try { pref = localStorage.getItem(VIDEO_PREF_KEY) || (localStorage.getItem("vote-less-motion") === "1" ? "off" : null); } catch (e) {}
+    if (pref === "on" || pref === "off") { videoOn.value = pref === "on"; videoChosen = true; }
   } catch (e) {}
   if (canVote.value && showCandidates.value) runPreload(candidateList.value, election.value?.intro, candidatePhoto);
   const pid = Number(route.query.election);
@@ -905,7 +916,34 @@ const openReview = async () => {
   opacity: 0;
 }
 
+/* Tombol video: keadaan (diputar/dijeda) dibaca dari ikon + label, bukan dari warna.
+   Fokus keyboard = cincin oranye terpisah; saat ditekan = sedikit mengecil, tanpa mengubah warna keadaan. */
+.video-toggle {
+  transition: background-color 150ms ease, color 150ms ease, transform 100ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.video-toggle:focus {
+  outline: none;
+}
+.video-toggle:focus-visible {
+  outline: 2px solid #ff6d00;
+  outline-offset: 3px;
+}
+.video-toggle:active {
+  transform: scale(0.96);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 640px) {
+  .video-toggle:active {
+    transform: translateY(-50%) scale(0.96);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .video-toggle,
+  .video-toggle:active {
+    transition: none;
+  }
   .vote-card,
   .vote-card.is-selected,
   .vc-enter-active .vc-panel,
