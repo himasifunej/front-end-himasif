@@ -76,7 +76,7 @@
           <div class="w-full space-y-2">
             <NuxtLink :to="afterLogin" class="block text-sm text-white/70 underline">Lihat halaman voting</NuxtLink>
           </div>
-          <div v-if="canResend" class="w-full border-t border-white/10 pt-4">
+          <div v-if="canResend" class="dark w-full border-t border-white/10 pt-4">
             <VoteResendLink :election-id="electionId" />
           </div>
           <p class="text-xs text-white/50">

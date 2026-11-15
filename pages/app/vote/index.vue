@@ -127,7 +127,7 @@
 
             <div
               v-if="authenticated && reasonText"
-              class="rounded-2xl border border-white/20 bg-white/5 p-4 md:p-5 text-sm md:text-base"
+              class="rounded-2xl border border-white/20 bg-black/70 backdrop-blur-md p-4 md:p-5 text-sm md:text-base text-white"
               role="status"
             >
               {{ reasonText }}
@@ -135,7 +135,8 @@
 
             <div
               v-if="!authenticated && !isPreview"
-              class="rounded-2xl border border-[#FF6D00]/50 bg-[#FF6D00]/10 p-4 md:p-5 space-y-3"
+              class="rounded-2xl bg-black/70 backdrop-blur-md border border-[#FF6D00]/50 p-4 md:p-5 space-y-3 text-white"
+              data-test="login-card"
             >
               <h2 class="font-bold text-base md:text-lg">Masuk untuk memilih</h2>
               <p class="text-sm text-white/80">
@@ -146,14 +147,22 @@
                 <NuxtLink
                   v-if="savedMagic"
                   :to="`/app/vote/masuk?election=${election.id}`"
-                  class="px-4 py-2 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
+                  class="px-4 py-2 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   data-test="saved-magic-enter"
                 >
                   Masuk &amp; pilih
                 </NuxtLink>
-                <AppButton class="border border-[#FF6D00] px-4 py-2 rounded-lg hover:bg-[#FF6D00] transition" @click="openLogin">
+                <!-- Bukan AppButton: gaya bawaannya (bg-primary-900, text-text-primary) tidak ada di tema gelap
+                     halaman ini, jadi tombolnya transparan dengan teks hitam. -->
+                <button
+                  type="button"
+                  class="px-4 py-2 rounded-lg font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  :class="savedMagic ? 'border border-white/40 text-white hover:bg-white/10' : 'bg-[#FF6D00] hover:bg-[#FF7E1D] text-black'"
+                  data-test="login-nim"
+                  @click="openLogin"
+                >
                   Masuk dengan NIM &amp; password
-                </AppButton>
+                </button>
               </div>
             </div>
           </section>
