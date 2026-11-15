@@ -155,8 +155,7 @@
 
                                                 <div @click="isForgetPassword = !isForgetPassword"
                                                     class="cursor-pointer text-deskripsi text-text-secondary dark:text-text-secondary-dark my-4">
-                                                    Lupa
-                                                    password?</div>
+                                                    Lupa password / link masuk hilang?</div>
 
                                                 <div class="flex">
                                                     <AppButtonPrimary type="submit"
@@ -168,7 +167,7 @@
                                         </div>
 
                                         <div class="py-[18.5px] pl-6 pr-8 w-[calc(100vw-2rem)] max-w-[400px]" v-show="isForgetPassword">
-                                            <h3 class="text-title-4 mb-4 pr-10">Lupa password?</h3>
+                                            <h3 class="text-title-4 mb-4 pr-10">Kirim ulang link masuk</h3>
                                             <div class="absolute bg-bg-primary dark:bg-bg-primary-dark border border-border-primary dark:border-border-primary-dark rounded-full w-8 h-8 top-4 right-4 flex items-center justify-center cursor-pointer"
                                                 data-modal-hide="authentication-modal" @click="isForgetPassword = false">
                                                 <svg width="20px" height="20px" fill="#fff" viewBox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg">
@@ -177,8 +176,12 @@
                                             </div>
                                             <div class="space-y-3 text-deskripsi text-text-secondary dark:text-text-secondary-dark">
                                                 <p>Untuk voting, masuk lewat <span class="text-text-primary dark:text-text-primary-dark">tautan masuk di email voting</span> yang dikirim ke email UNEJ kamu. Tidak perlu password.</p>
-                                                <p>Tautan hilang atau kedaluwarsa? Hubungi panitia lewat Instagram <a href="https://www.instagram.com/himasif/" target="_blank" rel="noopener" class="text-[#FF6D00] underline">@himasif</a> untuk dikirim ulang.</p>
+                                                <p>Tautan itu bisa dibuka lagi, juga di HP lain, sampai kamu memilih. Password tetap ada di email yang sama.</p>
                                             </div>
+                                            <div class="mt-4 text-text-primary dark:text-text-primary-dark">
+                                                <VoteResendLink />
+                                            </div>
+                                            <p class="mt-3 text-deskripsi text-text-secondary dark:text-text-secondary-dark">Masih belum masuk? Hubungi panitia lewat Instagram <a href="https://www.instagram.com/himasif/" target="_blank" rel="noopener" class="text-[#FF6D00] underline">@himasif</a>.</p>
                                             <button type="button" @click="isForgetPassword = false" class="mt-4 text-deskripsi text-text-secondary dark:text-text-secondary-dark underline">Kembali ke form masuk</button>
                                         </div>
 

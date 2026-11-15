@@ -109,6 +109,9 @@
               <p class="text-xs md:text-sm text-white/60">
                 Tautan masuk dikirim ke email UNEJ kamu (NIM@mail.unej.ac.id). Sambil menunggu, kenali calonnya di bawah.
               </p>
+              <p v-if="savedMagic && !authenticated" class="text-xs md:text-sm text-[#FFB27A]" data-test="saved-magic">
+                Link masukmu tersimpan di tab ini. Saat voting dibuka, tombol "Masuk &amp; pilih" muncul di halaman ini.
+              </p>
             </div>
           </section>
 
@@ -139,9 +142,19 @@
                 Buka <span class="font-semibold">tautan masuk</span> di email voting yang dikirim ke email UNEJ kamu.
                 Tidak menemukan emailnya? Masuk dengan NIM dan password.
               </p>
-              <AppButton class="border border-[#FF6D00] px-4 py-2 rounded-lg hover:bg-[#FF6D00] transition" @click="openLogin">
-                Masuk dengan NIM &amp; password
-              </AppButton>
+              <div class="flex flex-wrap gap-2">
+                <NuxtLink
+                  v-if="savedMagic"
+                  :to="`/app/vote/masuk?election=${election.id}`"
+                  class="px-4 py-2 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
+                  data-test="saved-magic-enter"
+                >
+                  Masuk &amp; pilih
+                </NuxtLink>
+                <AppButton class="border border-[#FF6D00] px-4 py-2 rounded-lg hover:bg-[#FF6D00] transition" @click="openLogin">
+                  Masuk dengan NIM &amp; password
+                </AppButton>
+              </div>
             </div>
           </section>
 
@@ -663,6 +676,12 @@ function onKey(e) {
 }
 
 const onImageError = (e) => (e.target.src = "/img/logo/himasif-white.png");
+
+// Link masuk dari email yang diklik sebelum voting dibuka (pages/app/vote/masuk.vue menyimpannya per tab).
+const savedMagic = ref(false);
+onMounted(() => {
+  savedMagic.value = !isPreview.value && !!loadMagicToken(election.value?.id ?? electionIdFromQuery(route.query.election));
+});
 
 function openLogin() {
   document.querySelector('[data-modal-toggle="authentication-modal"]')?.click();

@@ -40,7 +40,7 @@ const ALLOWLIST: Rule[] = [
   { methods: ["GET"], pattern: /^v2\/elections\/(current|\d{1,10})$/ },
   { methods: ["GET"], pattern: /^v2\/elections\/\d{1,10}\/(result|receipt|preview)$/ },
   { methods: ["POST"], pattern: /^v2\/elections\/\d{1,10}\/(confirm|vote)$/ },
-  { methods: ["POST"], pattern: /^v2\/auth\/(magic-link|login|logout)$/ },
+  { methods: ["POST"], pattern: /^v2\/auth\/(magic-link|magic-link\/resend|login|logout)$/ },
   { methods: ["GET"], pattern: /^v2\/me$/ },
 ];
 
