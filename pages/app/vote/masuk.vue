@@ -12,7 +12,7 @@
         <template v-if="status === 'session'">
           <h1 class="text-xl md:text-2xl font-bold">Kamu sudah masuk di perangkat ini</h1>
           <p class="text-sm text-white/70">
-            Tautan di email hanya bisa dipakai sekali, jadi tidak perlu dibuka lagi. Lanjutkan dari sesi yang sudah ada.
+            Lanjutkan dari sesi yang sudah ada. Tautan di email tetap bisa dipakai di perangkat lain sampai kamu memilih.
           </p>
           <NuxtLink
             :to="afterLogin"
@@ -26,7 +26,7 @@
         <template v-else-if="status === 'ready'">
           <h1 class="text-xl md:text-2xl font-bold">Masuk ke E-Voting HIMASIF</h1>
           <p class="text-sm text-white/70">
-            Tautan ini hanya untuk kamu dan hanya bisa dipakai sekali. Jangan teruskan email voting ke orang lain.
+            Tautan ini hanya untuk kamu dan bisa dibuka lagi sampai kamu memilih. Jangan teruskan email voting ke orang lain.
           </p>
           <button
             type="button"
@@ -46,11 +46,11 @@
         </template>
 
         <template v-else>
-          <h1 class="text-xl md:text-2xl font-bold">{{ errorCode === "magic_link_used" ? "Tautan ini sudah dipakai" : "Tautan tidak bisa dipakai" }}</h1>
+          <h1 class="text-xl md:text-2xl font-bold">{{ errorCode === "magic_link_voted" ? "Kamu sudah memilih" : "Tautan tidak bisa dipakai" }}</h1>
           <p class="text-sm text-white/70">{{ errorText }}</p>
-          <p v-if="errorCode === 'magic_link_used' || errorCode === 'magic_link_invalid'" class="text-xs text-white/60 text-left w-full rounded-lg border border-white/10 p-3">
-            Cara masuk lagi: isi NIM dan password 5 karakter yang tertulis di email voting yang sama
-            (di bawah tombol "Masuk &amp; pilih"). Pakai email <b class="text-white">terbaru</b>; password di email lama tidak berlaku lagi.
+          <p v-if="errorCode === 'magic_link_invalid' || errorCode === 'magic_link_used'" class="text-xs text-white/60 text-left w-full rounded-lg border border-white/10 p-3">
+            Cara masuk lagi: isi NIM dan password 5 karakter yang tertulis di email voting
+            (di bawah tombol "Masuk &amp; pilih"). Pakai password di email kredensial <b class="text-white">terbaru</b>.
           </p>
           <!-- form masuk langsung di layar ini (tidak bergantung modal navbar) -->
           <form class="w-full space-y-3 text-left" @submit.prevent="loginWithPassword">
@@ -76,8 +76,11 @@
           <div class="w-full space-y-2">
             <NuxtLink :to="afterLogin" class="block text-sm text-white/70 underline">Lihat halaman voting</NuxtLink>
           </div>
+          <div v-if="canResend" class="w-full border-t border-white/10 pt-4">
+            <VoteResendLink :election-id="electionId" />
+          </div>
           <p class="text-xs text-white/50">
-            Butuh tautan baru? Hubungi panitia lewat Instagram
+            Masih belum bisa masuk? Hubungi panitia lewat Instagram
             <a :href="HIMASIF_INSTAGRAM" target="_blank" rel="noopener" class="underline">@himasif</a>.
           </p>
         </template>
@@ -87,29 +90,42 @@
 </template>
 
 <script setup>
-// Magic link dari email: /app/vote/masuk?t=<token> (kontrak v2).
-// - Token TIDAK ditukar saat halaman dibuka, hanya setelah pemilih menekan tombol,
-//   supaya pemindai tautan email (Outlook Safe Links, antivirus kampus) tidak menghabiskan token sekali pakai.
-// - Token dihapus dari address bar begitu halaman dimuat (tidak tersimpan di riwayat/Referer).
+// Magic link dari email: /app/vote/masuk?t=<token>&election=<id> (kontrak v2).
+// - Token TIDAK ditukar saat halaman dibuka, hanya setelah pemilih menekan tombol (pemindai tautan email).
+// - Token dipindah dari address bar ke sessionStorage tab ini (tidak tersimpan di riwayat/Referer), jadi refresh,
+//   atau kembali dari halaman "Kenali Calon", tidak menghilangkannya.
+// - Token berlaku sampai pemilih memilih atau pemilihan ditutup (BE), bisa dipakai lagi di perangkat lain.
+// - Klik sebelum voting dibuka → /app/vote?election=ID (Kenali Calon); token tetap tersimpan.
 useHead({ title: "Masuk Voting", meta: [{ name: "robots", content: "noindex, nofollow" }] });
 
 const route = useRoute();
 const authStore = useAuthStore();
+const electionId = ref(electionIdFromQuery(route.query.election));
 // Tautan email membawa ?election=ID: setelah masuk, tampilkan pemilihan itu (bukan "pemilihan berjalan" apa pun).
-const afterLogin = votePath(electionIdFromQuery(route.query.election));
+const afterLogin = computed(() => votePath(electionId.value));
 
 const q = route.query.t ?? route.query.token;
 const token = ref(typeof q === "string" ? q : "");
-const status = ref(token.value ? "ready" : "error");
-const errorText = ref(token.value ? "" : "Tautan masuk tidak lengkap. Buka lagi tautan dari email voting kamu.");
+// SSR tidak melihat sessionStorage: tanpa ?t, tunggu onMounted sebelum menyatakan tautan tidak lengkap.
+const status = ref(token.value ? "ready" : "loading");
+const errorText = ref("");
 const errorCode = ref("");
+const canResend = computed(() => !["magic_link_voted", "magic_link_expired", "account_inactive"].includes(errorCode.value));
 
 onMounted(async () => {
-  if (route.query.t || route.query.token) {
-    history.replaceState(history.state, "", route.path);
+  if (token.value) {
+    saveMagicToken(token.value, electionId.value);
+    history.replaceState(history.state, "", electionId.value ? `${route.path}?election=${electionId.value}` : route.path);
+  } else {
+    const saved = loadMagicToken(electionId.value);
+    if (saved) {
+      token.value = saved.t;
+      electionId.value = electionId.value ?? saved.election;
+    }
   }
-  // Sudah masuk di perangkat ini (mis. halaman ditutup lalu tautan email dibuka lagi): jangan habiskan tautan,
-  // tawarkan lanjut dari sesi yang ada.
+  status.value = token.value ? "ready" : "error";
+  if (!token.value) errorText.value = "Tautan masuk tidak lengkap. Buka lagi tautan dari email voting kamu.";
+  // Sudah masuk di perangkat ini: tawarkan lanjut dari sesi yang ada.
   if (useCookie("token").value) {
     try {
       const me = await useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() });
@@ -133,7 +149,7 @@ async function loginWithPassword() {
     const d = res?.data ?? {};
     if (!d.token) throw { data: res };
     authStore.setSession(d.token, d.voter, d.expires_at);
-    await navigateTo(afterLogin, { replace: true });
+    await navigateTo(afterLogin.value, { replace: true });
   } catch (e) {
     loginError.value = apiError(e).message || "NIM atau password salah.";
   } finally {
@@ -142,8 +158,9 @@ async function loginWithPassword() {
 }
 
 const MESSAGES = {
-  magic_link_invalid: "Tautan tidak dikenal atau sudah diganti. Pakai tautan dari email voting terbaru.",
-  magic_link_used: "Tautan masuk hanya bisa dipakai sekali, dan tautan ini sudah dipakai. Kamu tetap bisa masuk dengan NIM dan password dari email yang sama.",
+  magic_link_invalid: "Tautan ini tidak berlaku lagi: kamu sudah memilih, atau sudah ada 3 tautan yang lebih baru. Masuk dengan NIM dan password, atau minta link masuk baru di bawah.",
+  magic_link_used: "Tautan ini sudah tidak berlaku. Masuk dengan NIM dan password dari email voting.",
+  magic_link_voted: "Suaramu sudah tercatat, jadi tautan masuk tidak berlaku lagi. Masuk dengan NIM dan password untuk melihat bukti memilih.",
   magic_link_expired: "Tautan ini sudah tidak berlaku karena pemilihannya sudah ditutup.",
   account_inactive: "Akunmu tidak aktif. Hubungi panitia lewat Instagram @himasif.",
 };
@@ -158,19 +175,21 @@ async function exchange() {
     const d = res?.data ?? {};
     if (!d.token) throw { data: res };
     authStore.setSession(d.token, d.voter, d.expires_at);
+    electionId.value = electionId.value ?? d.voter?.election?.id ?? null;
+    clearMagicToken(); // sesi sudah ada; tautan di email tetap bisa dibuka lagi bila perlu
     token.value = "";
-    await navigateTo(afterLogin, { replace: true });
+    await navigateTo(afterLogin.value, { replace: true });
   } catch (e) {
     const err = apiError(e);
+    const eid = electionIdFromQuery(err.body?.election_id) ?? electionId.value;
     if (err.code === "election_not_open") {
-      // Token tidak hangus: pemilih bisa membuka tautan yang sama saat voting dibuka.
-      status.value = "error";
-      const start = parseWib(err.body?.start_at);
-      errorText.value = start
-        ? `Voting belum dibuka. Buka lagi tautan yang sama mulai ${formatWib(start)}.`
-        : "Voting belum dibuka. Buka lagi tautan yang sama saat voting dimulai.";
+      // Token tidak hangus dan tetap tersimpan di tab ini: tampilkan para calon sambil menunggu.
+      saveMagicToken(token.value, eid);
+      await navigateTo(votePath(eid), { replace: true });
       return;
     }
+    if (MAGIC_DEAD_CODES.includes(err.code)) clearMagicToken();
+    if (eid) electionId.value = eid;
     status.value = "error";
     errorCode.value = err.code || "";
     errorText.value = MESSAGES[err.code] || err.message || "Tautan tidak bisa dipakai.";

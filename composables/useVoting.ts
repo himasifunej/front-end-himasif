@@ -69,6 +69,7 @@ export const VOTING_API = {
   preview: (id: number, token: string, phase?: string) =>
     `/v2/elections/${id}/preview?token=${encodeURIComponent(token)}${phase ? `&phase=${encodeURIComponent(phase)}` : ""}`,
   magicLink: "/v2/auth/magic-link",
+  resendLink: "/v2/auth/magic-link/resend",
   login: "/v2/auth/login",
   logout: "/v2/auth/logout",
   me: "/v2/me",
@@ -78,6 +79,53 @@ export const VOTING_API = {
 } as const;
 
 export const HIMASIF_INSTAGRAM = "https://www.instagram.com/himasif/";
+
+/**
+ * Token magic link disimpan di sessionStorage tab ini (bukan cookie/localStorage): klik sebelum voting dibuka
+ * diarahkan ke halaman "Kenali Calon", dan refresh / kembali ke halaman masuk tidak menghilangkan tokennya.
+ * Token berlaku sampai pemilih memilih atau pemilihan ditutup (BE), jadi menyimpannya per tab aman.
+ */
+export const MAGIC_STORE_KEY = "himasif-vote-magic";
+
+type KV = { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
+
+function sessionStore(): KV | null {
+  try {
+    return typeof sessionStorage === "undefined" ? null : sessionStorage;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function saveMagicToken(token: string, electionId: number | null, store: KV | null = sessionStore()): void {
+  if (!store || !token) return;
+  try {
+    store.setItem(MAGIC_STORE_KEY, JSON.stringify({ t: token, election: electionId ?? null }));
+  } catch (e) {}
+}
+
+/** Token tersimpan; bila `electionId` diberikan, hanya token pemilihan itu (atau yang tanpa id). */
+export function loadMagicToken(electionId: number | null = null, store: KV | null = sessionStore()): { t: string; election: number | null } | null {
+  if (!store) return null;
+  try {
+    const v = JSON.parse(store.getItem(MAGIC_STORE_KEY) || "null");
+    if (!v || typeof v.t !== "string" || !v.t) return null;
+    const el = electionIdFromQuery(v.election);
+    if (electionId && el && el !== electionId) return null;
+    return { t: v.t, election: el };
+  } catch (e) {
+    return null;
+  }
+}
+
+export function clearMagicToken(store: KV | null = sessionStore()): void {
+  try {
+    store?.removeItem(MAGIC_STORE_KEY);
+  } catch (e) {}
+}
+
+/** Kode galat tukar magic link yang berarti token tidak akan pernah berlaku lagi (buang dari penyimpanan). */
+export const MAGIC_DEAD_CODES = ["magic_link_invalid", "magic_link_voted", "magic_link_expired", "magic_link_used"];
 
 export const REASON_TEXT: Record<string, string> = {
   not_in_roster: "NIM kamu tidak ada di daftar pemilih resmi. Hubungi panitia bila ini keliru.",

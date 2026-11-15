@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -148,4 +148,39 @@ test("pratinjau panitia: path API membawa token + fase", () => {
   assert.equal(VOTING_API.preview(15, "a.b+c", "upcoming"), "/v2/elections/15/preview?token=a.b%2Bc&phase=upcoming");
   assert.equal(VOTING_API.preview(15, "t"), "/v2/elections/15/preview?token=t");
   assert.deepEqual([...PREVIEW_PHASES], ["upcoming", "open", "closed", "announced"]);
+});
+
+function memStore() {
+  const m = new Map();
+  return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), m };
+}
+
+test("magic link tersimpan per tab: refresh / kembali dari Kenali Calon tidak menghilangkannya", () => {
+  const st = memStore();
+  assert.equal(loadMagicToken(null, st), null);
+  saveMagicToken("tok-123", 18, st);
+  assert.deepEqual(loadMagicToken(null, st), { t: "tok-123", election: 18 });
+  assert.deepEqual(loadMagicToken(18, st), { t: "tok-123", election: 18 });
+  assert.equal(loadMagicToken(15, st), null, "token pemilihan lain tidak dipakai");
+  saveMagicToken("tok-x", null, st);
+  assert.deepEqual(loadMagicToken(15, st), { t: "tok-x", election: null });
+  st.setItem(MAGIC_STORE_KEY, "rusak{");
+  assert.equal(loadMagicToken(null, st), null);
+  saveMagicToken("tok-123", 18, st);
+  clearMagicToken(st);
+  assert.equal(loadMagicToken(null, st), null);
+  // tanpa sessionStorage (SSR / mode privat yang melempar galat): diam saja
+  assert.equal(loadMagicToken(null, null), null);
+  saveMagicToken("a", 1, null);
+  const bad = { getItem() { throw new Error("x"); }, setItem() { throw new Error("x"); }, removeItem() { throw new Error("x"); } };
+  assert.equal(loadMagicToken(null, bad), null);
+  saveMagicToken("a", 1, bad);
+  clearMagicToken(bad);
+});
+
+test("kode galat magic link yang mematikan token tersimpan; klik dini tidak", () => {
+  for (const c of ["magic_link_invalid", "magic_link_voted", "magic_link_expired"]) assert.ok(MAGIC_DEAD_CODES.includes(c));
+  assert.ok(!MAGIC_DEAD_CODES.includes("election_not_open"));
+  assert.ok(!MAGIC_DEAD_CODES.includes("too_many_attempts"));
+  assert.equal(VOTING_API.resendLink, "/v2/auth/magic-link/resend");
 });
