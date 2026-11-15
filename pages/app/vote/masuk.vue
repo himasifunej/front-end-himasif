@@ -15,7 +15,7 @@
             Tautan di email hanya bisa dipakai sekali, jadi tidak perlu dibuka lagi. Lanjutkan dari sesi yang sudah ada.
           </p>
           <NuxtLink
-            to="/app/vote"
+            :to="afterLogin"
             class="w-full flex items-center justify-center px-5 py-3 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition"
           >
             Lanjut ke halaman voting
@@ -74,7 +74,7 @@
             </button>
           </form>
           <div class="w-full space-y-2">
-            <NuxtLink to="/app/vote" class="block text-sm text-white/70 underline">Lihat halaman voting</NuxtLink>
+            <NuxtLink :to="afterLogin" class="block text-sm text-white/70 underline">Lihat halaman voting</NuxtLink>
           </div>
           <p class="text-xs text-white/50">
             Butuh tautan baru? Hubungi panitia lewat Instagram
@@ -95,6 +95,8 @@ useHead({ title: "Masuk Voting", meta: [{ name: "robots", content: "noindex, nof
 
 const route = useRoute();
 const authStore = useAuthStore();
+// Tautan email membawa ?election=ID: setelah masuk, tampilkan pemilihan itu (bukan "pemilihan berjalan" apa pun).
+const afterLogin = votePath(electionIdFromQuery(route.query.election));
 
 const q = route.query.t ?? route.query.token;
 const token = ref(typeof q === "string" ? q : "");
@@ -131,7 +133,7 @@ async function loginWithPassword() {
     const d = res?.data ?? {};
     if (!d.token) throw { data: res };
     authStore.setSession(d.token, d.voter, d.expires_at);
-    await navigateTo(AFTER_LOGIN_PATH, { replace: true });
+    await navigateTo(afterLogin, { replace: true });
   } catch (e) {
     loginError.value = apiError(e).message || "NIM atau password salah.";
   } finally {
@@ -157,7 +159,7 @@ async function exchange() {
     if (!d.token) throw { data: res };
     authStore.setSession(d.token, d.voter, d.expires_at);
     token.value = "";
-    await navigateTo("/app/vote", { replace: true });
+    await navigateTo(afterLogin, { replace: true });
   } catch (e) {
     const err = apiError(e);
     if (err.code === "election_not_open") {

@@ -31,7 +31,23 @@ export interface Election {
   server_time: string;
   voter_years?: number[];
   candidates: Candidate[];
-  result: { announced_at?: string; winner: Winner } | null;
+  result: { announced_at?: string; winner: Winner; placeholder?: boolean } | null;
+  /** Hanya pada respons pratinjau admin (GET /v2/elections/{id}/preview). */
+  preview?: boolean;
+  preview_phase?: Exclude<VotePhase, "none">;
+}
+
+export const PREVIEW_PHASES = ["upcoming", "open", "closed", "announced"] as const;
+
+/** ?election=ID dari tautan email → angka bulat positif, selain itu null. */
+export function electionIdFromQuery(v: unknown): number | null {
+  const n = Number(Array.isArray(v) ? v[0] : v);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/** Path halaman voting untuk satu pemilihan (tautan email selalu membawa id pemilihannya). */
+export function votePath(electionId: number | null): string {
+  return electionId ? `/app/vote?election=${electionId}` : "/app/vote";
 }
 
 export interface Voter {
@@ -50,6 +66,8 @@ export const VOTING_API = {
   current: "/v2/elections/current",
   election: (id: number) => `/v2/elections/${id}`,
   result: (id: number) => `/v2/elections/${id}/result`,
+  preview: (id: number, token: string, phase?: string) =>
+    `/v2/elections/${id}/preview?token=${encodeURIComponent(token)}${phase ? `&phase=${encodeURIComponent(phase)}` : ""}`,
   magicLink: "/v2/auth/magic-link",
   login: "/v2/auth/login",
   logout: "/v2/auth/logout",

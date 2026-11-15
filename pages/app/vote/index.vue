@@ -1,5 +1,13 @@
 <template>
   <div class="bg-[#111111] text-white min-h-screen relative">
+    <div
+      v-if="isPreview"
+      id="vote-preview-ribbon"
+      class="sticky top-0 z-50 bg-[#FF6D00] text-black text-center text-xs md:text-sm font-bold tracking-wide px-3 py-2"
+      role="status"
+    >
+      PREVIEW · {{ PHASE_LABEL[phase] || phase }} · hanya untuk panitia, tidak ada yang tersimpan atau terkirim
+    </div>
     <div class="absolute inset-0 z-0">
       <AppBackgroundHeader background-image="vote.jpeg" />
     </div>
@@ -23,9 +31,9 @@
 
           <!-- BELUM ADA / GAGAL MEMUAT -->
           <section v-if="phase === 'none' || loadError" class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-6 md:p-10 text-center space-y-4">
-            <h2 class="text-xl md:text-2xl font-bold">{{ loadError ? "Data pemilihan gagal dimuat" : "Belum ada pemilihan" }}</h2>
-            <p class="text-sm text-white/70">Pantau info terbaru di Instagram <a :href="instagramUrl" target="_blank" rel="noopener" class="underline">@himasif</a>.</p>
-            <button v-if="loadError" type="button" class="px-4 py-2 rounded-lg border border-white/30" @click="refreshElection()">Coba lagi</button>
+            <h2 class="text-xl md:text-2xl font-bold">{{ noneTitle }}</h2>
+            <p class="text-sm text-white/70">{{ noneText }} Pantau info terbaru di Instagram <a :href="instagramUrl" target="_blank" rel="noopener" class="underline">@himasif</a>.</p>
+            <button v-if="loadError && !previewInvalid" type="button" class="px-4 py-2 rounded-lg border border-white/30" @click="refreshElection()">Coba lagi</button>
           </section>
 
           <!-- BUKTI MEMILIH -->
@@ -123,7 +131,7 @@
             </div>
 
             <div
-              v-if="!authenticated"
+              v-if="!authenticated && !isPreview"
               class="rounded-2xl border border-[#FF6D00]/50 bg-[#FF6D00]/10 p-4 md:p-5 space-y-3"
             >
               <h2 class="font-bold text-base md:text-lg">Masuk untuk memilih</h2>
@@ -199,7 +207,7 @@
           <!-- DAFTAR CALON (belum dibuka & dibuka): gaya himasif.id, semua calon setara -->
           <section v-if="showCandidates" class="space-y-4" aria-labelledby="calon-title">
             <div class="relative">
-              <h2 id="calon-title" class="text-title-3-sm md:text-title-3 text-center">Calon Ketua Umum</h2>
+              <h2 id="calon-title" class="text-title-3-sm md:text-title-3 text-center">{{ phase === "upcoming" ? "Kenali Calon" : "Calon Ketua Umum" }}</h2>
               <!-- tombol kecil di pojok: kurangi animasi (prefers-reduced-motion tetap dihormati) -->
               <button
                 type="button"
@@ -390,13 +398,36 @@ const authStore = useAuthStore();
 const { authenticated } = storeToRefs(authStore);
 const { settings } = storeToRefs(useMySettingsStore());
 
-// 1) Pemilihan berjalan (publik). 404 no_election → "Belum ada pemilihan".
-const { data: currentRes, error: currentErr, refresh: refreshElection } = await useAPI(VOTING_API.current, {
-  key: "election-current",
+// 1) Pemilihan: dari tautan email (?election=ID) → pemilihan ITU dengan fasenya yang sebenarnya;
+//    tanpa id → pemilihan berjalan (publik). 404 → "Belum ada pemilihan".
+//    Pratinjau panitia: ?election=ID&preview=TOKEN[&phase=upcoming|open|closed|announced] (token singkat dari CMS).
+const route = useRoute();
+const electionId = electionIdFromQuery(route.query.election);
+const previewToken = typeof route.query.preview === "string" && route.query.preview ? route.query.preview : null;
+const previewPhaseQ = PREVIEW_PHASES.includes(route.query.phase) ? route.query.phase : undefined;
+const isPreviewReq = !!(previewToken && electionId);
+const apiPath = isPreviewReq
+  ? VOTING_API.preview(electionId, previewToken, previewPhaseQ)
+  : electionId
+    ? VOTING_API.election(electionId)
+    : VOTING_API.current;
+const { data: currentRes, error: currentErr, refresh: refreshElection } = await useAPI(apiPath, {
+  key: `election-${isPreviewReq ? `preview-${electionId}-${previewPhaseQ || "now"}` : electionId || "current"}`,
 });
+const PHASE_LABEL = { upcoming: "Sebelum dibuka (Kenali Calon)", open: "Dibuka", closed: "Ditutup", announced: "Diumumkan" };
 const election = computed(() => currentRes.value?.data ?? null);
+const isPreview = computed(() => isPreviewReq && !!election.value?.preview);
+if (isPreviewReq) useHead({ meta: [{ name: "robots", content: "noindex, nofollow" }] });
 const notFound = computed(() => !!currentErr.value && apiError(currentErr.value).status === 404);
+const previewInvalid = computed(() => isPreviewReq && !!currentErr.value && apiError(currentErr.value).status === 401);
 const loadError = computed(() => !!currentErr.value && !notFound.value);
+// Tautan email (?election=ID) ke pemilihan yang belum dijadwalkan → jangan jatuh ke "pemilihan berjalan" lain.
+const noneTitle = computed(() =>
+  previewInvalid.value ? "Tautan pratinjau kedaluwarsa" : loadError.value ? "Data pemilihan gagal dimuat" : electionId ? "Pemilihan belum dijadwalkan" : "Belum ada pemilihan",
+);
+const noneText = computed(() =>
+  previewInvalid.value ? "Buka lagi pratinjau dari CMS (Jalankan pemilihan)." : electionId && notFound.value ? "Jadwal pemilihan ini belum diumumkan panitia." : "",
+);
 const phase = computed(() => (election.value ? election.value.phase : notFound.value ? "none" : "loading"));
 const startAt = computed(() => parseWib(election.value?.start_at));
 const endAt = computed(() => parseWib(election.value?.end_at));
@@ -407,7 +438,6 @@ const title = computed(() => election.value?.name || "Pemilihan Ketua Umum HIMAS
 
 // Pengumuman beranimasi (fase DIUMUMKAN) + pratinjau khusus non-production:
 // /app/vote?preview-reveal=1[&election=ID] → data hasil pemilihan ID (yang sudah diumumkan) atau data dummy.
-const route = useRoute();
 const requestHost = useRequestURL().hostname;
 const previewMode = computed(
   () =>
@@ -461,7 +491,7 @@ async function loadReceipt() {
 }
 
 async function loadVoter() {
-  if (!authenticated.value || !election.value) return;
+  if (!authenticated.value || !election.value || isPreview.value) return;
   try {
     const res = await useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() });
     voter.value = res?.data ?? null;
@@ -485,7 +515,7 @@ const hasVoted = computed(() => screen.value === "voted");
 const showCandidates = computed(
   () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !hasVoted.value,
 );
-const canVote = computed(() => authenticated.value && screen.value === "ballot");
+const canVote = computed(() => !isPreview.value && authenticated.value && screen.value === "ballot");
 
 const selected = ref(null);
 const selectedCandidate = computed(() => candidateList.value.find((c) => c.id === selected.value) || null);
