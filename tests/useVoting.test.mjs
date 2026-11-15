@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -134,4 +134,18 @@ test("enterMayPick: Enter ditahan / terbawa setelah pindah calon tidak memilih",
   assert.equal(enterMayPick({}, 1000, 1200, true), false, "200 ms setelah pindah calon: ditolak");
   assert.equal(enterMayPick({}, 1000, 1600, true), true, "Enter baru setelah 500 ms: boleh memilih calon yang tampil");
   assert.equal(enterMayPick({}, 1000, 1001, false), true, "dibuka langsung (bukan pindah): perilaku lama");
+});
+
+test("tautan email: ?election=ID → pemilihan itu, tidak pernah fallback ke pemilihan lain", () => {
+  assert.equal(electionIdFromQuery("15"), 15);
+  assert.equal(electionIdFromQuery(["19", "3"]), 19);
+  for (const bad of [undefined, "", "0", "-2", "1.5", "abc", null]) assert.equal(electionIdFromQuery(bad), null, String(bad));
+  assert.equal(votePath(15), "/app/vote?election=15");
+  assert.equal(votePath(null), "/app/vote");
+});
+
+test("pratinjau panitia: path API membawa token + fase", () => {
+  assert.equal(VOTING_API.preview(15, "a.b+c", "upcoming"), "/v2/elections/15/preview?token=a.b%2Bc&phase=upcoming");
+  assert.equal(VOTING_API.preview(15, "t"), "/v2/elections/15/preview?token=t");
+  assert.deepEqual([...PREVIEW_PHASES], ["upcoming", "open", "closed", "announced"]);
 });
