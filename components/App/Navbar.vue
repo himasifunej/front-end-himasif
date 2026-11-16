@@ -19,57 +19,36 @@
                     </AppButtonSecondary>
                 </div>
 
-                <button type="button" ref="userDropdownTrigger" v-if="authenticated"
-                    class="flex text-sm bg-card-hover dark:bg-card-hover-dark rounded-full border border-border-primary dark:border-border-primary-dark lg:mr-0 focus:ring-0 justify-start items-center py-0.5 pl-0.5 pr-2 gap-2"
-                    id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown"
-                    data-dropdown-placement="bottom-end">
-                    <span class="sr-only">Open user menu</span>
-
-                    <div
-                        class="text-center text-text-primary dark:text-text-primary-dark text-lg font-normal font-['Poppins'] leading-7 tracking-widest w-7 h-7 rounded-full bg-card-primary dark:bg-card-primary-dark">
-                        A</div>
-
-                    <NuxtImg src="/icon/Iconly/Light/ArrowDown.svg" :alt="'dropdown navbar icon'" width="15"
-                        class="w-[10px] invert dark:invert-0" />
-                </button>
-
-                <!-- Dropdown menu -->
-                <div class="z-50 p-2 hidden text-deskripsi bg-card-primary dark:bg-card-primary-dark rounded-lg border border-border-primary dark:border-border-primary-dark shadow w-32"
-                    id="user-dropdown" ref="userDropdownContent">
-
-                    <template v-if="authenticated">
-                        <div class="space-y-1.5 text-text-primary dark:text-text-primary-dark w-full">
-                            <h5>Hai, {{ getFirstName(username) }} 👋 </h5>
-
-                            <button type="button" data-modal-target="profile-modal" data-modal-toggle="profile-modal"
-                                class="w-full bg-card-primary dark:bg-card-primary-dark hover:bg-[#FF6D00] dark:hover:hover:bg-[#FF6D00] active:bg-[#FF7E1D] dark:active:active:bg-[#FF7E1D] px-2 py-1 flex items-center gap-1.5 rounded">
-                                <NuxtImg src="/icon/Iconly/Light/Profile-account.svg" class="invert dark:invert-0" width="10"></NuxtImg>
-                                <p>Profil</p>
-                            </button>
-
-
-                            <div class="w-full border-b border-b-border-primary dark:border-b-border-primary-dark">
-                            </div>
-
-                            <button type="button" @click="logout()"
-                                class="w-full bg-card-primary dark:bg-card-primary-dark hover:bg-[#FF0000] active:bg-[#FF3030] dark:hover:bg-[#FF0000] dark:active:bg-[#FF3030] px-2 py-1 flex items-center gap-1.5 rounded">
-                                <NuxtImg src="/icon/Iconly/Light/Logout.svg" class="invert dark:invert-0" width="14"></NuxtImg>
-                                <p>Keluar</p>
-                            </button>
-                        </div>
-                    </template>
-
-                    <button type="button" data-modal-target="authentication-modal" @click="hideUserDropdown()"
-                        v-show="!authenticated" data-modal-toggle="authentication-modal"
-                        class="flex justify-start items-center text-white gap-[5px] pl-2 py-1 pr-12 bg-card-primary dark:bg-card-primary-dark hover:bg-[#ff6d00] active:bg-[#ff7d1d] rounded">
-                        <NuxtImg src="/icon/Iconly/Light/ArrowDown.svg" :alt="'dropdown navbar icon'" width="15"
-                            class="w-[10px]" />
-
-                        <div class="text-white text-[10px] font-normal leading-[15px]">Masuk
-                        </div>
+                <!-- Menu akun: dikendalikan Vue (bukan Flowbite). Flowbite hanya mengikat tombol yang sudah ada saat
+                     halaman dimuat, jadi setelah masuk tanpa muat ulang (form navbar / tautan masuk) tombol ini mati. -->
+                <div v-if="authenticated" ref="accountMenu" class="relative">
+                    <button type="button" id="user-menu-button" data-test="account-button"
+                        class="flex text-sm bg-card-hover dark:bg-card-hover-dark rounded-full border border-border-primary dark:border-border-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6D00] justify-start items-center py-0.5 pl-0.5 pr-2 gap-2 max-w-[11rem]"
+                        :aria-expanded="accountOpen ? 'true' : 'false'" aria-haspopup="menu" aria-controls="user-dropdown"
+                        :aria-label="`Akun: ${fullName}`" @click.stop="accountOpen = !accountOpen">
+                        <span aria-hidden="true"
+                            class="shrink-0 text-center text-text-primary dark:text-text-primary-dark text-lg font-normal font-['Poppins'] leading-7 w-7 h-7 rounded-full bg-card-primary dark:bg-card-primary-dark">
+                            {{ getUsernameInitial }}</span>
+                        <span class="hidden sm:inline truncate text-text-primary dark:text-text-primary-dark text-deskripsi" data-test="account-first-name">{{ firstName }}</span>
+                        <NuxtImg src="/icon/Iconly/Light/ArrowDown.svg" alt="" width="15"
+                            class="shrink-0 w-[10px] invert dark:invert-0 transition-transform" :class="accountOpen ? 'rotate-180' : ''" />
                     </button>
 
+                    <div v-show="accountOpen" id="user-dropdown" role="menu" data-test="account-menu"
+                        class="absolute right-0 top-full mt-2 z-50 p-3 w-60 text-deskripsi bg-card-primary dark:bg-card-primary-dark rounded-lg border border-border-primary dark:border-border-primary-dark shadow-lg text-text-primary dark:text-text-primary-dark space-y-2">
+                        <p class="text-xs text-text-secondary dark:text-text-secondary-dark">Masuk sebagai</p>
+                        <p class="font-semibold break-words" data-test="account-full-name">{{ fullName }}</p>
+                        <p v-if="maskedNim" class="text-text-secondary dark:text-text-secondary-dark tabular-nums" data-test="account-nim">NIM {{ maskedNim }}</p>
+                        <div class="border-b border-b-border-primary dark:border-b-border-primary-dark"></div>
+                        <button type="button" role="menuitem" @click="logout()" data-test="account-logout"
+                            class="w-full hover:bg-[#FF0000] hover:text-white active:bg-[#FF3030] px-2 py-1.5 flex items-center gap-1.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6D00]">
+                            <NuxtImg src="/icon/Iconly/Light/Logout.svg" class="invert dark:invert-0" width="14" alt=""></NuxtImg>
+                            <span>Keluar</span>
+                        </button>
+                    </div>
+                </div>
 
+                <div>
                     <Teleport to="body">
 
                         <div id="authentication-modal" tabindex="-1" aria-hidden="true"
@@ -410,9 +389,21 @@
                     </div>
 
                     <div class="border-t border-t-border-primary dark:border-t-border-primary-dark pt-4 lg:hidden">
-                        <AppButtonSecondary v-if="!authenticated" class="text-white">
+                        <!-- Dulu tombol ini tanpa aksi: tidak membuka form masuk. -->
+                        <AppButtonSecondary v-if="!authenticated" class="text-white" @click="openLoginModal()">
                             Masuk
                         </AppButtonSecondary>
+                        <div v-else class="flex items-center gap-3" data-test="mobile-account">
+                            <span aria-hidden="true"
+                                class="shrink-0 w-10 h-10 rounded-full border border-border-primary dark:border-border-primary-dark bg-card-primary dark:bg-card-primary-dark flex items-center justify-center text-lg">{{ getUsernameInitial }}</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs text-text-secondary dark:text-text-secondary-dark">Masuk sebagai</p>
+                                <p class="font-semibold break-words">{{ fullName }}</p>
+                                <p v-if="maskedNim" class="text-deskripsi text-text-secondary dark:text-text-secondary-dark tabular-nums">NIM {{ maskedNim }}</p>
+                            </div>
+                            <button type="button" @click="logout()"
+                                class="shrink-0 px-3 py-1.5 rounded-lg border border-[#FF0000] text-[#FF3030] hover:bg-[#FF0000] hover:text-white">Keluar</button>
+                        </div>
                     </div>
 
 
@@ -429,7 +420,7 @@
 </template>
 
 <script setup>
-import { initDropdowns, initModals, Dropdown, initCollapses, Collapse } from 'flowbite';
+import { initDropdowns, initModals, initCollapses } from 'flowbite';
 import { AppAlertConfirm, AppAlertSuccess, AppAlertError } from '#components';
 import { useDarkMode } from '@/composables/useDarkMode';
 
@@ -444,8 +435,12 @@ const isOpen = ref(false)
 const { authenticateUser, logUserOut } = useAuthStore()
 const navRoute = useRoute()
 // Tombol "Masuk" (belum login) dulu memanggil userDropdown.hide() → flowbite melempar galat karena dropdown belum ada.
+function openLoginModal() {
+    document.getElementById('main-navbar-toggle')?.click()
+    document.querySelector('[data-modal-toggle="authentication-modal"]')?.click()
+}
 function hideUserDropdown() {
-    try { userDropdown.value?.hide?.() } catch (e) {}
+    accountOpen.value = false
 }
 const alertStore = useAlertsStore()
 const { authenticated } = storeToRefs(useAuthStore())
@@ -461,9 +456,21 @@ const user = ref({
 const username = ref(useCookie('username').value)
 const navbarStore = useNavbarStore()
 const passwordShow = ref(false)
-const userDropdownContent = ref(null)
-const userDropdownTrigger = ref(null)
-const userDropdown = ref(null)
+const accountMenu = ref(null)
+const accountOpen = ref(false)
+// NIM akun yang masuk: cookie "nim" (diisi saat masuk) atau state bersama dari halaman voting (/v2/me).
+const sharedNim = useState('account-nim', () => useCookie('nim').value || '')
+const nim = computed({ get: () => sharedNim.value || '', set: (v) => { sharedNim.value = v || '' } })
+
+function onDocClick(e) {
+    if (accountOpen.value && accountMenu.value && !accountMenu.value.contains(e.target)) accountOpen.value = false
+}
+function onDocKey(e) {
+    if (e.key === 'Escape' && accountOpen.value) {
+        accountOpen.value = false
+        document.getElementById('user-menu-button')?.focus()
+    }
+}
 
 // const navbarTrigger = ref(null)
 // const navbarContent = ref(null)
@@ -472,10 +479,28 @@ const userDropdown = ref(null)
 
 
 // Sesi bisa dibuat di luar navbar (tautan masuk, form di /app/vote/masuk): ambil ulang nama dari cookie.
-watch(authenticated, (v) => { if (v) username.value = useCookie('username').value })
+watch(authenticated, (v) => {
+    if (v) {
+        username.value = useCookie('username').value
+        nim.value = useCookie('nim').value
+    } else {
+        accountOpen.value = false
+    }
+})
+// Halaman voting memperbarui nama/NIM dari /v2/me (sesi lama belum punya cookie nim).
+const sessionVersion = computed(() => useAuthStore().sessionVersion)
+watch(sessionVersion, () => {
+    username.value = useCookie('username').value
+    nim.value = useCookie('nim').value
+})
+watch(() => navRoute.fullPath, () => { accountOpen.value = false })
+
+const fullName = computed(() => String(username.value || 'Pemilih').trim() || 'Pemilih')
+const firstName = computed(() => fullName.value.split(/\s+/)[0])
+const maskedNim = computed(() => maskNim(nim.value))
 
 const getUsernameInitial = computed(() => {
-    return String(username.value || useCookie('username').value || 'P')[0]
+    return String(username.value || useCookie('username').value || 'P').trim().charAt(0).toUpperCase() || 'P'
 })
 
 function getFirstName(fullName) {
@@ -508,9 +533,10 @@ const updateProfile = async () => {
 
 
 const logout = async () => {
+    accountOpen.value = false
     await logUserOut()
-    userDropdown.value.hide()
     username.value = ''
+    nim.value = ''
     user.value.email = ''
     user.value.password = ''
     user.value.remember_me = 0
@@ -520,6 +546,11 @@ const togglePassword = () => {
     passwordShow.value = !passwordShow.value
 }
 
+
+onBeforeUnmount(() => {
+    document.removeEventListener('click', onDocClick)
+    document.removeEventListener('keydown', onDocKey)
+})
 
 onMounted(() => {
     initDropdowns()
@@ -531,7 +562,8 @@ onMounted(() => {
     // navbarContent.value = document.getElementById('main-navbar')
     // navbarCollapse.value = new Collapse(navbarTrigger, navbarContent)
 
-    userDropdown.value = new Dropdown(userDropdownContent.value, userDropdownTrigger.value, { placement: 'bottom-end' })
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onDocKey)
 
     if (!authenticated) {
         navbarStore.setActiveNav('/')

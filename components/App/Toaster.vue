@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      class="fixed z-[60] inset-x-0 top-4 sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto px-4 sm:px-0 flex flex-col items-center sm:items-end gap-2 pointer-events-none"
+      class="fixed z-[60] inset-x-0 top-20 sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto px-4 sm:px-0 flex flex-col items-center sm:items-end gap-2 pointer-events-none"
       aria-live="polite"
     >
       <TransitionGroup name="toast">
