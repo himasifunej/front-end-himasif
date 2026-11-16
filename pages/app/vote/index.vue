@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#111111] text-white min-h-screen relative">
+  <div class="bg-[#111111] text-white min-h-screen relative isolate">
     <div
       v-if="isPreview"
       id="vote-preview-ribbon"
@@ -8,9 +8,15 @@
     >
       PREVIEW · {{ PHASE_LABEL[phase] || phase }} · hanya untuk panitia, tidak ada yang tersimpan atau terkirim
     </div>
-    <div class="absolute inset-0 z-0">
-      <AppBackgroundHeader background-image="vote.jpeg" />
+    <!-- Latar: foto selalu memenuhi layar (fixed, dipotong ke area halaman ini lewat clip-path di .vote-bg-clip) + scrim
+         gelap di atas, lebih terang di tengah; ujung bawah halaman memudar ke #111 tanpa pita/garis. -->
+    <div class="vote-bg-clip" aria-hidden="true">
+      <div class="vote-bg">
+        <NuxtImg src="/img/banner/vote.jpeg" sizes="1080" class="vote-bg__img" alt="" />
+        <div class="vote-bg__scrim"></div>
+      </div>
     </div>
+    <div class="vote-bg__fade" aria-hidden="true"></div>
 
     <div class="relative z-20">
       <AppContentArea class="pt-6 pb-28 px-4 md:px-8 lg:px-12">
@@ -228,6 +234,7 @@
 
           <!-- DAFTAR CALON (belum dibuka & dibuka): gaya himasif.id, semua calon setara -->
           <section v-if="showCandidates" class="space-y-4" aria-labelledby="calon-title">
+            <div class="calon-head rounded-2xl bg-black/55 backdrop-blur-md border border-white/10 px-4 py-4 md:px-6">
             <div class="relative flex flex-col items-center gap-2 sm:block">
               <h2 id="calon-title" class="text-title-3-sm md:text-title-3 text-center">{{ phase === "upcoming" ? "Kenali Calon" : "Calon Ketua Umum" }}</h2>
               <!-- Video perkenalan calon: ikon + label mengikuti keadaan sebenarnya (diputar / dijeda).
@@ -250,10 +257,11 @@
                 <span aria-hidden="true">{{ videoOn ? "Jeda video" : "Putar video" }}</span>
               </button>
             </div>
-            <p class="text-sm text-text-secondary-dark -mt-2 text-center">
+            <p id="calon-sub" class="calon-sub mt-2 mx-auto max-w-2xl text-sm md:text-[15px] leading-relaxed font-medium text-white/90 text-center text-balance">
               Ketuk kartu untuk melihat perkenalan serta visi &amp; misi calon<template v-if="canVote">, lalu pilih dan kirim pilihanmu</template>.
               <span v-if="canVote" class="hidden md:inline"> Keyboard: tekan 1–{{ candidateList.length }} untuk memilih.</span>
             </p>
+            </div>
             <p class="sr-only" aria-live="polite">{{ selectedCandidate ? `Calon nomor ${selectedCandidate.order}, ${selectedCandidate.name} dipilih.` : "" }}</p>
 
             <div class="vote-ballot pt-2" :style="{ '--cols': Math.min(candidateList.length, 3) }">
@@ -814,6 +822,54 @@ const openReview = async () => {
 </script>
 
 <style scoped>
+/* Foto latar mengikuti layar, tidak berhenti di 1 tinggi layar. clip-path pada wadah membatasi elemen fixed ke area
+   halaman ini (footer tidak tertutup); modal & bar bawah yang fixed tidak ikut terpotong karena di luar wadah ini. */
+.vote-bg-clip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  clip-path: inset(0);
+  pointer-events: none;
+}
+.vote-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.vote-bg__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100svh;
+  object-fit: cover;
+  object-position: 50% 48%; /* papan "FAKULTAS ILMU KOMPUTER" tetap di tengah */
+}
+.vote-bg__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.86) 0%,
+    rgba(17, 17, 17, 0.62) 22%,
+    rgba(17, 17, 17, 0.42) 50%,
+    rgba(17, 17, 17, 0.58) 78%,
+    rgba(17, 17, 17, 0.8) 100%
+  );
+}
+/* Ujung bawah halaman: memudar ke warna halaman, tanpa garis keras. */
+.vote-bg__fade {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 14rem;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(17, 17, 17, 0) 0%, #111111 100%);
+}
+.calon-sub {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
 /* Kartu calon: maju halus saat hover, "pop" saat dipilih, kilau cahaya berulang + glow oranye kecil pada yang
    terpilih (canvas 349454e4e4f1 / FE #15–#16; hilang di d236c6d, dipulihkan dengan warna himasif.id). */
 .vote-card {
