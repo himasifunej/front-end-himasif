@@ -559,7 +559,7 @@ function syncAccount(v) {
   }
 }
 const accountFirstName = computed(() => String(voter.value?.name || useCookie("username").value || "Pemilih").trim().split(/\s+/)[0]);
-const accountNim = computed(() => maskNim(voter.value?.nim || sharedNim.value));
+const accountNim = computed(() => String(voter.value?.nim || sharedNim.value || "").trim());
 
 const reasonText = computed(() => {
   const ve = voter.value?.election;

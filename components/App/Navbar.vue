@@ -38,7 +38,7 @@
                         class="absolute right-0 top-full mt-2 z-50 p-3 w-60 text-deskripsi bg-card-primary dark:bg-card-primary-dark rounded-lg border border-border-primary dark:border-border-primary-dark shadow-lg text-text-primary dark:text-text-primary-dark space-y-2">
                         <p class="text-xs text-text-secondary dark:text-text-secondary-dark">Masuk sebagai</p>
                         <p class="font-semibold break-words" data-test="account-full-name">{{ fullName }}</p>
-                        <p v-if="maskedNim" class="text-text-secondary dark:text-text-secondary-dark tabular-nums" data-test="account-nim">NIM {{ maskedNim }}</p>
+                        <p v-if="accountNim" class="text-text-secondary dark:text-text-secondary-dark tabular-nums" data-test="account-nim">NIM {{ accountNim }}</p>
                         <div class="border-b border-b-border-primary dark:border-b-border-primary-dark"></div>
                         <button type="button" role="menuitem" @click="logout()" data-test="account-logout"
                             class="w-full hover:bg-[#FF0000] hover:text-white active:bg-[#FF3030] px-2 py-1.5 flex items-center gap-1.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6D00]">
@@ -399,7 +399,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="text-xs text-text-secondary dark:text-text-secondary-dark">Masuk sebagai</p>
                                 <p class="font-semibold break-words">{{ fullName }}</p>
-                                <p v-if="maskedNim" class="text-deskripsi text-text-secondary dark:text-text-secondary-dark tabular-nums">NIM {{ maskedNim }}</p>
+                                <p v-if="accountNim" class="text-deskripsi text-text-secondary dark:text-text-secondary-dark tabular-nums">NIM {{ accountNim }}</p>
                             </div>
                             <button type="button" @click="logout()"
                                 class="shrink-0 px-3 py-1.5 rounded-lg border border-[#FF0000] text-[#FF3030] hover:bg-[#FF0000] hover:text-white">Keluar</button>
@@ -497,7 +497,7 @@ watch(() => navRoute.fullPath, () => { accountOpen.value = false })
 
 const fullName = computed(() => String(username.value || 'Pemilih').trim() || 'Pemilih')
 const firstName = computed(() => fullName.value.split(/\s+/)[0])
-const maskedNim = computed(() => maskNim(nim.value))
+const accountNim = computed(() => String(nim.value || "").trim())
 
 const getUsernameInitial = computed(() => {
     return String(username.value || useCookie('username').value || 'P').trim().charAt(0).toUpperCase() || 'P'

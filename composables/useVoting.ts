@@ -314,11 +314,3 @@ export function enterMayPick(e: { repeat?: boolean }, shownAt: number, now: numb
   if (e.repeat) return false;
   return !navigated || now - shownAt >= minMs;
 }
-
-/** NIM disamarkan untuk ditampilkan di navbar: "232410101090" → "2324•••90". */
-export function maskNim(nim: string | null | undefined): string {
-  const n = String(nim ?? "").replace(/\s+/g, "");
-  if (!n) return "";
-  if (n.length <= 6) return n.slice(0, 2) + "•••";
-  return n.slice(0, 4) + "•••" + n.slice(-2);
-}
