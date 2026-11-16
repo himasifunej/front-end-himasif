@@ -42,8 +42,7 @@
             data-test="signed-in-as"
           >
             Masuk sebagai <b class="text-white">{{ accountFirstName }}</b><span v-if="accountNim" class="text-white/70"> · NIM {{ accountNim }}</span>.
-            <span class="text-white/70">Bukan kamu?</span>
-            <button type="button" class="underline text-white" @click="authStore.logUserOut()">Keluar</button>
+            <span class="text-white/70">Bukan kamu?</span>{{ " " }}<button type="button" class="underline text-white" @click="authStore.logUserOut()">Keluar</button>
           </p>
 
           <!-- BELUM ADA / GAGAL MEMUAT -->
