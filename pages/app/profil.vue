@@ -463,7 +463,7 @@
                                         berlaku pada periode ini.</p>
                                 </div>
 
-                                <div class="grid grid-flow-col md:grid-flow-row md:grid-cols-3 gap-[10px] mx-auto"
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-[10px] mx-auto"
                                     v-if="pageData.result.dokumen.length > 0">
                                     <CardDokumen v-for="document in pageData.result.dokumen"
                                         @click="navigateTo(document.url, { open: { target: '_blank' } })">
