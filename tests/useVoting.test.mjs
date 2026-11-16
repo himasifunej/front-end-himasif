@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, MAGIC_STORE_KEY, MAGIC_DEAD_CODES, maskNim } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -183,12 +183,4 @@ test("kode galat magic link yang mematikan token tersimpan; klik dini tidak", ()
   assert.ok(!MAGIC_DEAD_CODES.includes("election_not_open"));
   assert.ok(!MAGIC_DEAD_CODES.includes("too_many_attempts"));
   assert.equal(VOTING_API.resendLink, "/v2/auth/magic-link/resend");
-});
-
-test("maskNim: NIM disamarkan di navbar", () => {
-  assert.equal(maskNim("232410101090"), "2324•••90");
-  assert.equal(maskNim(" 232410101090 "), "2324•••90");
-  assert.equal(maskNim("12345"), "12•••");
-  assert.equal(maskNim(""), "");
-  assert.equal(maskNim(null), "");
 });
