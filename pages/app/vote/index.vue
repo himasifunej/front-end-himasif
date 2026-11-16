@@ -35,6 +35,17 @@
             </span>
           </header>
 
+          <!-- Akun yang sedang masuk: pemilih tahu akun mana yang akan memilih. -->
+          <p
+            v-if="authenticated && !isPreview"
+            class="mx-auto w-fit max-w-full rounded-full bg-black/60 backdrop-blur-md border border-white/10 px-4 py-1.5 text-sm text-white/90 text-center"
+            data-test="signed-in-as"
+          >
+            Masuk sebagai <b class="text-white">{{ accountFirstName }}</b><span v-if="accountNim" class="text-white/70"> · NIM {{ accountNim }}</span>.
+            <span class="text-white/70">Bukan kamu?</span>
+            <button type="button" class="underline text-white" @click="authStore.logUserOut()">Keluar</button>
+          </p>
+
           <!-- BELUM ADA / GAGAL MEMUAT -->
           <section v-if="phase === 'none' || loadError" class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-6 md:p-10 text-center space-y-4">
             <h2 class="text-xl md:text-2xl font-bold">{{ noneTitle }}</h2>
@@ -529,6 +540,7 @@ async function loadVoter() {
   try {
     const res = await useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() });
     voter.value = res?.data ?? null;
+    syncAccount(voter.value);
     if (voter.value?.election?.has_voted) await loadReceipt();
   } catch (e) {
     if (apiError(e).status === 401) {
@@ -537,6 +549,18 @@ async function loadVoter() {
     }
   }
 }
+
+// Nama + NIM akun dari /v2/me ke navbar (sesi lama belum menyimpan cookie nim).
+const sharedNim = useState("account-nim", () => useCookie("nim").value || "");
+function syncAccount(v) {
+  if (!v) return;
+  if (v.nim) {
+    sharedNim.value = v.nim;
+    useCookie("nim", { maxAge: 60 * 60 * 12, sameSite: "lax" }).value = v.nim;
+  }
+}
+const accountFirstName = computed(() => String(voter.value?.name || useCookie("username").value || "Pemilih").trim().split(/\s+/)[0]);
+const accountNim = computed(() => maskNim(voter.value?.nim || sharedNim.value));
 
 const reasonText = computed(() => {
   const ve = voter.value?.election;

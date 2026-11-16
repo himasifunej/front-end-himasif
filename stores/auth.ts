@@ -8,7 +8,7 @@ interface UserPayloadInterface {
   remember_me?: string | number;
 }
 
-const SESSION_COOKIES = ["token", "username", "is-vote"] as const;
+const SESSION_COOKIES = ["token", "username", "is-vote", "nim"] as const;
 
 export const useAuthStore = defineStore({
   id: "auth",
@@ -29,12 +29,15 @@ export const useAuthStore = defineStore({
       useCookie("token", opts).value = token;
       useCookie("username", opts).value = voter?.name || "Pemilih";
       useCookie("is-vote", opts).value = voter?.election?.has_voted ? "true" : "false";
+      useCookie("nim", opts).value = voter?.nim || null;
+      useState("account-nim").value = voter?.nim || "";
       this.authenticated = true;
       this.sessionVersion++;
     },
 
     clearSession() {
       for (const c of SESSION_COOKIES) useCookie(c).value = null;
+      useState("account-nim").value = "";
       this.authenticated = false;
     },
 
