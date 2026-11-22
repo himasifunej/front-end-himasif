@@ -124,6 +124,27 @@ export function clearMagicToken(store: KV | null = sessionStore()): void {
   } catch (e) {}
 }
 
+/** Awalan semua kunci sessionStorage milik alur voting (token magic link, dsb.). */
+export const VOTE_STORE_PREFIX = "himasif-vote-";
+
+/**
+ * Keluar / sesi habis: buang semua jejak sesi pemilih di tab ini (token magic link dan kunci voting lain di
+ * sessionStorage). Token magic link berlaku sampai pemilih memilih, jadi di komputer bersama (lab kampus) orang
+ * berikutnya tidak boleh bisa masuk lagi dari tab yang sama.
+ */
+export function clearVoterBrowserState(store: (KV & { length?: number; key?(i: number): string | null }) | null = sessionStore()): void {
+  if (!store) return;
+  clearMagicToken(store);
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < (store.length ?? 0); i++) {
+      const k = store.key?.(i);
+      if (k && k.startsWith(VOTE_STORE_PREFIX)) keys.push(k);
+    }
+    keys.forEach((k) => store.removeItem(k));
+  } catch (e) {}
+}
+
 /** Kode galat tukar magic link yang berarti token tidak akan pernah berlaku lagi (buang dari penyimpanan). */
 export const MAGIC_DEAD_CODES = ["magic_link_invalid", "magic_link_voted", "magic_link_expired", "magic_link_used"];
 

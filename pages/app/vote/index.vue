@@ -779,6 +779,11 @@ watch(authenticated, (v) => {
   if (!v) {
     voter.value = null;
     receipt.value = null;
+    selected.value = null;
+    // layar konfirmasi + token konfirmasi sekali pakai milik sesi lama ikut dibuang
+    if (confirming.value) answerConfirm(false);
+    confirmToken.value = null;
+    savedMagic.value = false;
   }
 });
 // Tiap sesi baru (juga login ulang saat sudah berada di halaman ini): muat ulang status pemilih lalu tampilkan
