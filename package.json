@@ -9,6 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "start": "NITRO_PORT=8989 node .output/server/index.mjs",
+    "typecheck": "nuxi typecheck",
     "test": "node --experimental-strip-types --no-warnings --test tests/useVoting.test.mjs"
   },
   "devDependencies": {
@@ -19,8 +20,10 @@
     "@vueuse/nuxt": "^10.5.0",
     "dom-parse": "^3.0.0",
     "nuxt": "^3.8.0",
+    "typescript": "^5.9.3",
     "vue": "^3.3.4",
-    "vue-router": "^4.2.5"
+    "vue-router": "^4.2.5",
+    "vue-tsc": "^2.1.10"
   },
   "dependencies": {
     "@chenfengyuan/vue-countdown": "^2.1.2",

@@ -106,6 +106,6 @@ export default defineEventHandler(async (event) => {
 
   return sendProxy(event, target, {
     headers,
-    fetchOptions: { method, body, redirect: "manual" },
+    fetchOptions: { method, body: body ? new Uint8Array(body) : undefined, redirect: "manual" },
   });
 });
