@@ -58,7 +58,7 @@
 import { ref } from 'vue';
 import QRCode from 'qrcode';
 
-useHead({ title: 'Shorten Link' });
+useHead({ title: 'QR Code' });
 
 const baseFormData = {
     destination_url: '',
