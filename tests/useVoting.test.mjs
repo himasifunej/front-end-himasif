@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, clearVoterBrowserState, VOTE_STORE_PREFIX, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, withRetry, confirmFailure, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, clearVoterBrowserState, VOTE_STORE_PREFIX, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -204,4 +204,45 @@ test("clearVoterBrowserState: keluar membuang token magic link dan kunci voting 
   assert.equal(store.getItem(VOTE_STORE_PREFIX + "lain"), null);
   assert.equal(store.getItem("tema"), "gelap");
   clearVoterBrowserState(null); // tanpa sessionStorage (SSR) tidak melempar
+});
+
+test("voterScreen: status pemilih belum diketahui → kerangka/galat, TIDAK PERNAH surat suara (insiden e2e 22 Nov)", () => {
+  // /v2/me masih dimuat: sekalipun data lama ada, belum boleh memilih
+  assert.equal(voterScreen("open", null, false, "loading"), "loading");
+  assert.equal(voterScreen("open", { eligible: true, has_voted: false }, false, "loading"), "loading");
+  assert.equal(voterScreen("open", null, false, "idle"), "loading");
+  // /v2/me gagal: pesan galat + Coba lagi
+  assert.equal(voterScreen("open", null, false, "error"), "error");
+  assert.equal(voterScreen("open", { eligible: true, has_voted: false }, false, "error"), "error");
+  // baru setelah termuat: surat suara / sudah memilih
+  assert.equal(voterScreen("open", { eligible: true, has_voted: false }, false, "ok"), "ballot");
+  assert.equal(voterScreen("open", { eligible: true, has_voted: true }, false, "ok"), "voted");
+  // bukti memilih yang sudah termuat tetap menang; di luar jam buka tetap "wait"
+  assert.equal(voterScreen("open", null, true, "error"), "voted");
+  assert.equal(voterScreen("upcoming", null, false, "error"), "wait");
+});
+
+test("withRetry: coba ulang dengan jeda bertambah, berhasil di percobaan ke-3", async () => {
+  const waits = []; let n = 0;
+  const v = await withRetry(async () => { n++; if (n < 3) throw new Error("jaringan"); return "ok"; }, { delays: [1000, 2500], sleep: async (ms) => { waits.push(ms); } });
+  assert.equal(v, "ok"); assert.equal(n, 3); assert.deepEqual(waits, [1000, 2500]);
+});
+
+test("withRetry: semua gagal → galat terakhir dilempar setelah 3 percobaan; 401 tidak dicoba ulang", async () => {
+  let n = 0;
+  await assert.rejects(withRetry(async () => { n++; throw new Error("gagal " + n); }, { sleep: async () => {} }), /gagal 3/);
+  assert.equal(n, 3);
+  let m = 0;
+  const e401 = Object.assign(new Error("401"), { status: 401 });
+  await assert.rejects(withRetry(async () => { m++; throw e401; }, { shouldRetry: (e) => e.status !== 401, sleep: async () => {} }));
+  assert.equal(m, 1);
+});
+
+test("confirmFailure: alasan penolakan confirm langsung tampil dengan tindak lanjut yang tepat", () => {
+  assert.deepEqual(confirmFailure({ status: 409, code: "already_voted" }).action, "voted");
+  assert.match(confirmFailure({ status: 409, code: "already_voted" }).message, /sudah memilih/);
+  assert.deepEqual(confirmFailure({ status: 423, code: "election_not_open" }), { message: "Voting belum dibuka. Pilihanmu bisa dikirim setelah voting dibuka.", action: "refresh" });
+  assert.equal(confirmFailure({ status: 423, code: "election_closed" }).action, "refresh");
+  assert.deepEqual(confirmFailure({ status: 403, code: "not_eligible", message: "Angkatanmu tidak termasuk." }), { message: "Angkatanmu tidak termasuk.", action: "reload-voter" });
+  assert.deepEqual(confirmFailure({ status: 0, code: "", message: "" }), { message: "Ringkasan tidak bisa dibuka. Coba lagi.", action: null });
 });

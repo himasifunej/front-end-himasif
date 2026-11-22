@@ -247,11 +247,61 @@ export const AFTER_LOGIN_PATH = "/app/vote";
  * ballot = surat suara; voted = "Kamu sudah memilih pada ..."; reason = tidak bisa memilih (alasan tampil);
  * wait = belum dibuka / sudah ditutup; loading = status pemilih belum dimuat.
  */
-export function voterScreen(phase: string, voterElection: any, hasReceipt = false): "ballot" | "voted" | "reason" | "wait" | "loading" {
-  if (hasReceipt || voterElection?.has_voted) return "voted";
+/**
+ * Layar pemilih yang sudah masuk. `status` = keadaan permintaan status pemilih (/v2/me):
+ * selama belum "ok" status pilihan TIDAK diketahui → "loading" (kerangka) atau "error" (pesan + Coba lagi),
+ * jangan pernah surat suara. Insiden e2e 22 Nov: /v2/me gagal → daftar calon tampil seolah belum memilih.
+ */
+export type VoterStatus = "idle" | "loading" | "ok" | "error";
+export function voterScreen(phase: string, voterElection: any, hasReceipt = false, status: VoterStatus = "ok"): "ballot" | "voted" | "reason" | "wait" | "loading" | "error" {
+  if (hasReceipt || (status === "ok" && voterElection?.has_voted)) return "voted";
   if (phase !== "open") return "wait";
-  if (!voterElection) return "loading";
+  if (status === "error") return "error";
+  if (status !== "ok" || !voterElection) return "loading";
   return voterElection.eligible ? "ballot" : "reason";
+}
+
+/**
+ * Layar konfirmasi ditolak server (BE menolak confirm sebelum buka / sesudah tutup / sudah memilih, tanpa token):
+ * pesan yang tepat langsung di layar konfirmasi + tindak lanjut halaman.
+ */
+export function confirmFailure(err: { status?: number; code?: string; message?: string; body?: any }): { message: string; action: "voted" | "refresh" | "reload-voter" | null } {
+  switch (err?.code) {
+    case "already_voted":
+      return { message: "Kamu sudah memilih. Suaramu sudah tercatat dan tidak bisa diubah.", action: "voted" };
+    case "election_not_open":
+      return { message: "Voting belum dibuka. Pilihanmu bisa dikirim setelah voting dibuka.", action: "refresh" };
+    case "election_closed":
+      return { message: "Voting sudah ditutup. Suara tidak bisa dikirim lagi.", action: "refresh" };
+    case "not_eligible":
+      return { message: err.message || "Kamu tidak bisa memilih pada pemilihan ini.", action: "reload-voter" };
+    default:
+      return { message: err?.message || "Ringkasan tidak bisa dibuka. Coba lagi.", action: null };
+  }
+}
+
+/**
+ * Jalankan `fn` dengan percobaan ulang + jeda bertambah (mis. 1 s lalu 2,5 s). Galat yang `shouldRetry`-nya false
+ * (mis. 401: sesi habis) langsung dilempar. Melempar galat terakhir bila semua percobaan gagal.
+ */
+export async function withRetry<T>(
+  fn: (attempt: number) => Promise<T>,
+  opts: { delays?: number[]; shouldRetry?: (e: unknown) => boolean; sleep?: (ms: number) => Promise<void> } = {},
+): Promise<T> {
+  const delays = opts.delays ?? [1000, 2500];
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const shouldRetry = opts.shouldRetry ?? (() => true);
+  let last: unknown;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await fn(attempt);
+    } catch (e) {
+      last = e;
+      if (!shouldRetry(e) || attempt === delays.length) break;
+      await sleep(delays[attempt]);
+    }
+  }
+  throw last;
 }
 
 /** Pemilih boleh mengetik NIM atau email UNEJ. */

@@ -141,6 +141,40 @@
               <VoteTimer :target="endAt" :offset="offset" label="Sisa waktu" compact />
             </div>
 
+            <!-- Status pilihan belum diketahui: kerangka, bukan surat suara -->
+            <div
+              v-if="voterStatusPending && screen === 'loading'"
+              class="rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 p-4 md:p-5 space-y-3"
+              role="status"
+              aria-live="polite"
+              data-test="voter-status-loading"
+            >
+              <span class="sr-only">Memuat status pilihanmu…</span>
+              <div class="h-4 w-48 rounded bg-white/15 animate-pulse" aria-hidden="true"></div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-hidden="true">
+                <div v-for="i in 3" :key="i" class="h-40 sm:h-72 rounded-lg bg-white/10 animate-pulse"></div>
+              </div>
+            </div>
+            <div
+              v-if="voterStatusPending && screen === 'error'"
+              class="rounded-2xl border border-red-400/50 bg-black/70 backdrop-blur-md p-4 md:p-5 space-y-3 text-white"
+              role="alert"
+              data-test="voter-status-error"
+            >
+              <h2 class="font-bold text-base md:text-lg">Gagal memuat status pilihanmu</h2>
+              <p class="text-sm text-white/80">
+                Kami belum bisa memastikan apakah kamu sudah memilih, jadi surat suara belum ditampilkan. Periksa koneksi, lalu coba lagi.
+              </p>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg font-semibold bg-[#FF6D00] hover:bg-[#FF7E1D] text-black transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                data-test="voter-status-retry"
+                @click="loadVoter()"
+              >
+                Coba lagi
+              </button>
+            </div>
+
             <div
               v-if="authenticated && reasonText"
               class="rounded-2xl border border-white/20 bg-black/70 backdrop-blur-md p-4 md:p-5 text-sm md:text-base text-white"
@@ -534,18 +568,32 @@ async function loadReceipt() {
   }
 }
 
+// Status pilihan pemilih (/v2/me): "loading" sampai termuat; gagal → "error" (pesan + Coba lagi), bukan surat suara.
+const voterStatus = ref("idle");
+let voterLoadSeq = 0;
 async function loadVoter() {
   if (!authenticated.value || !election.value || isPreview.value) return;
+  const seq = ++voterLoadSeq;
+  voterStatus.value = "loading";
   try {
-    const res = await useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() });
+    // 3 percobaan (jeda 1 s lalu 2,5 s); 401 = sesi habis, tidak dicoba ulang.
+    const res = await withRetry(() => useNuxtApp().$api(VOTING_API.me, { headers: voterAuthHeader() }), {
+      shouldRetry: (e) => apiError(e).status !== 401,
+    });
+    if (seq !== voterLoadSeq) return;
     voter.value = res?.data ?? null;
     syncAccount(voter.value);
     if (voter.value?.election?.has_voted) await loadReceipt();
+    voterStatus.value = voter.value?.election ? "ok" : "error";
   } catch (e) {
+    if (seq !== voterLoadSeq) return;
     if (apiError(e).status === 401) {
       authStore.clearSession();
       voter.value = null;
+      voterStatus.value = "idle";
+      return;
     }
+    voterStatus.value = "error";
   }
 }
 
@@ -567,10 +615,12 @@ const reasonText = computed(() => {
   return REASON_TEXT[ve.reason] || "Kamu tidak bisa memilih pada pemilihan ini.";
 });
 // Layar untuk pemilih yang sudah masuk: surat suara / "Kamu sudah memilih" / alasan (lihat voterScreen).
-const screen = computed(() => (authenticated.value ? voterScreen(phase.value, voter.value?.election, !!receipt.value) : "wait"));
+const screen = computed(() => (authenticated.value ? voterScreen(phase.value, voter.value?.election, !!receipt.value, voterStatus.value) : "wait"));
 const hasVoted = computed(() => screen.value === "voted");
+// Selama status pilihan belum diketahui (memuat / gagal) daftar calon TIDAK tampil: jangan sampai terlihat seolah belum memilih.
+const voterStatusPending = computed(() => !isPreview.value && authenticated.value && phase.value === "open" && ["loading", "error"].includes(screen.value));
 const showCandidates = computed(
-  () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !hasVoted.value,
+  () => ["upcoming", "open"].includes(phase.value) && candidateList.value.length > 0 && !hasVoted.value && !voterStatusPending.value,
 );
 const canVote = computed(() => !isPreview.value && authenticated.value && screen.value === "ballot");
 
@@ -684,7 +734,19 @@ function askConfirm() {
   useNuxtApp()
     .$api(VOTING_API.confirm(id), { method: "POST", headers: voterAuthHeader(), body: { candidate_id: cid } })
     .then((r) => { if (confirming.value && selectedCandidate.value?.id === cid) confirmToken.value = r?.data?.confirm_token || null; })
-    .catch((e) => (confirmError.value = apiError(e).message || "Ringkasan tidak bisa dibuka. Coba lagi."));
+    .catch((e) => {
+      const err = apiError(e);
+      const f = confirmFailure(err);
+      confirmError.value = f.message; // langsung di layar konfirmasi; tombol Kirim tetap mati (tanpa token)
+      if (f.action === "voted") {
+        if (err.body?.receipt_code) receipt.value = { receipt_code: err.body.receipt_code, recorded_at: err.body.recorded_at };
+        if (voter.value?.election) voter.value.election.has_voted = true;
+      } else if (f.action === "refresh") {
+        refreshElection();
+      } else if (f.action === "reload-voter") {
+        loadVoter();
+      }
+    });
   return new Promise((res) => (confirmResolve = res));
 }
 function answerConfirm(ok) {
@@ -777,6 +839,8 @@ onBeforeUnmount(() => {
 // Masuk dari navbar → muat status pemilih; keluar → bersihkan.
 watch(authenticated, (v) => {
   if (!v) {
+    voterLoadSeq++;
+    voterStatus.value = "idle";
     voter.value = null;
     receipt.value = null;
     selected.value = null;
