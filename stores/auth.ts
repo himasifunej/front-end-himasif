@@ -37,6 +37,9 @@ export const useAuthStore = defineStore({
 
     clearSession() {
       for (const c of SESSION_COOKIES) useCookie(c).value = null;
+      // Token magic link (sessionStorage) ikut dibuang: tanpa ini, di komputer bersama orang berikutnya bisa
+      // membuka /app/vote/masuk di tab yang sama dan masuk sebagai pemilih sebelumnya.
+      if (import.meta.client) clearVoterBrowserState();
       useState("account-nim").value = "";
       this.authenticated = false;
     },

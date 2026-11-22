@@ -1,7 +1,7 @@
 // npm test  (node --experimental-strip-types --test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
+import { parseWib, formatWib, apiError, clockOffset, loginBody, candidatePhoto, electionPeriod, createConfirmGuard, voterScreen, AFTER_LOGIN_PATH, neighborIndex, navKeyDir, swipeDir, enterMayPick, electionIdFromQuery, votePath, VOTING_API, PREVIEW_PHASES, saveMagicToken, loadMagicToken, clearMagicToken, clearVoterBrowserState, VOTE_STORE_PREFIX, MAGIC_STORE_KEY, MAGIC_DEAD_CODES } from "../composables/useVoting.ts";
 
 test("electionPeriod", () => {
   assert.equal(electionPeriod({ name: "Pemilihan Ketua Umum HIMASIF 2026" }), "2026–2027");
@@ -183,4 +183,25 @@ test("kode galat magic link yang mematikan token tersimpan; klik dini tidak", ()
   assert.ok(!MAGIC_DEAD_CODES.includes("election_not_open"));
   assert.ok(!MAGIC_DEAD_CODES.includes("too_many_attempts"));
   assert.equal(VOTING_API.resendLink, "/v2/auth/magic-link/resend");
+});
+
+test("clearVoterBrowserState: keluar membuang token magic link dan kunci voting lain, kunci lain tetap", () => {
+  const m = new Map();
+  const store = {
+    getItem: (k) => (m.has(k) ? m.get(k) : null),
+    setItem: (k, v) => m.set(k, String(v)),
+    removeItem: (k) => m.delete(k),
+    get length() { return m.size; },
+    key: (i) => [...m.keys()][i] ?? null,
+  };
+  saveMagicToken("tok-123", 7, store);
+  store.setItem(VOTE_STORE_PREFIX + "lain", "x");
+  store.setItem("tema", "gelap");
+  assert.ok(loadMagicToken(7, store));
+  clearVoterBrowserState(store);
+  assert.equal(loadMagicToken(7, store), null);
+  assert.equal(store.getItem(MAGIC_STORE_KEY), null);
+  assert.equal(store.getItem(VOTE_STORE_PREFIX + "lain"), null);
+  assert.equal(store.getItem("tema"), "gelap");
+  clearVoterBrowserState(null); // tanpa sessionStorage (SSR) tidak melempar
 });
